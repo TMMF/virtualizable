@@ -1,22 +1,17 @@
 import * as React from 'react'
-import * as ReactDOM from 'react-dom'
+import * as ReactDOM from 'react-dom/client'
 import { Virtualizable } from '../.'
 
-const ITEMS = [] /*[
-  { id: '1', x: 0, y: 0, width: 100, height: 100 },
-  { id: '2', x: 200, y: 0, width: 100, height: 100 },
-  { id: '3', x: 400, y: 0, width: 100, height: 100 },
-  { id: '4', x: 0, y: 200, width: 100, height: 100 },
-  { id: '5', x: 200, y: 200, width: 100, height: 100 },
-  { id: '6', x: 400, y: 200, width: 100, height: 100 },
-  { id: '7', x: 0, y: 400, width: 100, height: 100 },
-  { id: '8', x: 200, y: 400, width: 100, height: 100 },
-  { id: '9', x: 400, y: 400, width: 100, height: 100 },
-]*/
+const ITEMS = []
 
-const GRID_SIZE = 100
+// Naive Approach: 100x100 causes ~2-3ms render time (~25 renders); 200x200 causes ~8-9ms render time (~27 renders; capped by scroll throttle)
+// Calculate on scroll handler: 200x200 causes ~13ms render time (~33 renders capped by scroll throttle)
+// Bucketing: 200x200 causes ~11ms render time (~39 renders capped by scroll throttle)
+// Bucketing [FIXED]: 200x200 causes ~1ms render time (~41 renders capped by scroll throttle)
+const GRID_SIZE = 300
 for (let i = 0; i < GRID_SIZE; i++) {
   for (let j = 0; j < GRID_SIZE; j++) {
+    // @ts-expect-error - TODO need to fix
     ITEMS.push({
       id: `${i}-${j}`,
       x: i * 200,
@@ -59,4 +54,5 @@ const App = () => {
   )
 }
 
-ReactDOM.render(<App />, document.getElementById('root'))
+const root = ReactDOM.createRoot(document.getElementById('root')!)
+root.render(<App />)
