@@ -1,5 +1,5 @@
-import React, { HTMLAttributes, ReactNode, useCallback, useMemo } from 'react'
-import { throttle } from './utils'
+import React, { HTMLAttributes, ReactNode, forwardRef, useCallback, useImperativeHandle, useMemo } from 'react'
+import { throttle, measurePerformance } from './utils'
 
 type PositiveNumber = number // [0, ∞)
 type Box = {
@@ -23,25 +23,46 @@ export interface ListProps<I extends Item, Key extends string> extends HTMLAttri
   // ---
   bucketSize?: PositiveNumber // Defaults to the smaller of the two dimensions (width or height); MAXING OUT AT 500x500
   getBucket?: (item: I, key: Key | number) => [number, number] // Preprocessing makes this faster, but component will handle it if not provided (rets [x, y])
+  buckets?: Record<BucketKey, Key[]> // Preprocessing makes this faster, but component will handle it if not provided
+  // ---
+  overscan?: PositiveNumber // Defaults to ??? (needs to at least 1 for tabbing purposes)
+  // ---
+  as?: string // Defaults to 'div'
+  // --- DIV PROPS
+  // ...
+  onItemsRendered?: (items: Collection<I, Key>) => void // Rendered items (when it changes)
+  onItemsVisible?: (items: Collection<I, Key>) => void // Rendered + Visible items (when it changes)
 }
 
-export const Virtualizable = <I extends Item, Key extends string>(props: ListProps<I, Key>): JSX.Element => {
+// TODO:
+// Context for scrolling and not scrolling
+// Context for rendered items?
+// useTransition and useDeferredValue for rendered items?
+
+export const Virtualizable = forwardRef(function Virtualizable<I extends Item, Key extends string>(
+  props: ListProps<I, Key>,
+  ref: React.Ref<unknown>
+): JSX.Element {
   const { items, getBoundingBox, renderItem, className, style } = props
 
+  // TODO: lazy evaluation of width and height ???
+  // TODO: GPU Acceleration ???
   const { width, height } = useMemo(
     () =>
-      Object.keys(items).reduce(
-        (acc, key) => {
-          // @ts-expect-error - TODO need to fix
-          const item = items[key]
-          // @ts-expect-error - TODO need to fix
-          const box = getBoundingBox(item, key)
-          return {
-            width: Math.max(acc.width, box.x + box.width),
-            height: Math.max(acc.height, box.y + box.height),
-          }
-        },
-        { width: 0, height: 0 }
+      measurePerformance('Size', () =>
+        Object.keys(items).reduce(
+          (acc, key) => {
+            // @ts-expect-error - TODO need to fix
+            const item = items[key]
+            // @ts-expect-error - TODO need to fix
+            const box = getBoundingBox(item, key)
+            return {
+              width: Math.max(acc.width, box.x + box.width),
+              height: Math.max(acc.height, box.y + box.height),
+            }
+          },
+          { width: 0, height: 0 }
+        )
       ),
     [items, getBoundingBox]
   )
@@ -58,31 +79,35 @@ export const Virtualizable = <I extends Item, Key extends string>(props: ListPro
   const getBucket = props.getBucket ?? _getBucket
 
   // TODO: GPU Acceleration ???
-  const buckets = useMemo(() => {
-    const buckets: Record<BucketKey, Key[]> = {}
+  const buckets = useMemo(
+    () =>
+      props.buckets ??
+      measurePerformance('Buckets', () => {
+        const buckets: Record<BucketKey, Key[]> = {}
 
-    Object.keys(items).forEach((_key) => {
-      const key = _key as Key
+        Object.keys(items).forEach((_key) => {
+          const key = _key as Key
 
-      // @ts-expect-error - TODO need to fix
-      const item = items[key]
-      const [x, y] = getBucket(item, key)
-      const bucketKey = getBucketKey(x, y)
+          // @ts-expect-error - TODO need to fix
+          const item = items[key]
+          const [x, y] = getBucket(item, key)
+          const bucketKey = getBucketKey(x, y)
 
-      if (!buckets[bucketKey]) {
-        buckets[bucketKey] = []
-      }
-      buckets[bucketKey].push(key)
-    })
+          if (!buckets[bucketKey]) {
+            buckets[bucketKey] = []
+          }
+          buckets[bucketKey].push(key)
+        })
 
-    return buckets
-  }, [getBucket, items])
+        return buckets
+      }),
+    [props.buckets, getBucket, items]
+  )
 
-  const [domRef, setDomRef] = React.useState<HTMLDivElement | null>(null)
-  // TODO: GPU Acceleration ???
+  const domRef = React.useRef<HTMLDivElement | null>(null)
   const getVisibleKeys = useCallback(
     (scroll: { x: number; y: number }) => {
-      const containerBox = domRef?.getBoundingClientRect() ?? { width: 0, height: 0 }
+      const containerBox = domRef.current?.getBoundingClientRect() ?? { width: 0, height: 0 }
 
       const bucketMinX = Math.floor(scroll.x / bucketSize)
       const bucketMinY = Math.floor(scroll.y / bucketSize)
@@ -91,7 +116,6 @@ export const Virtualizable = <I extends Item, Key extends string>(props: ListPro
 
       const visibleKeys: Key[] = []
 
-      // console.log('Bucket Range:', bucketMinX, bucketMaxX, bucketMinY, bucketMaxY)
       for (let x = bucketMinX - 1; x <= bucketMaxX + 1; x++) {
         for (let y = bucketMinY - 1; y <= bucketMaxY + 1; y++) {
           // Relevant buckets
@@ -119,8 +143,6 @@ export const Virtualizable = <I extends Item, Key extends string>(props: ListPro
     [domRef, getBoundingBox, items, bucketSize, buckets]
   )
 
-  // TODO: replace scroll with visible components, calculate visible components within the scroll handler
-  // const [scroll, setScroll] = React.useState({ x: 0, y: 0 })
   const [visibleKeys, setVisibleKeys] = React.useState<Key[]>(getVisibleKeys({ x: 0, y: 0 }))
   const handleScroll = useMemo(
     () =>
@@ -141,23 +163,59 @@ export const Virtualizable = <I extends Item, Key extends string>(props: ListPro
     [getVisibleKeys]
   )
 
-  console.log(
+  useImperativeHandle(
+    ref,
+    () => ({
+      // @ts-ignore
+      scrollTo: (left: number, top: number) => {},
+      // @ts-ignore
+      scrollToItem: (key: Key, alignment: 'auto' | 'start' | 'center' | 'end') => {},
+      getCanvasSize: () => ({ width, height }),
+      getRenderedItems: () => {},
+      getVisibleItems: () => {},
+      getBuckets: () => buckets,
+      getInnerRef: () => domRef,
+      recompute: () => {}, // forcibly recompute buckets + visible keys (should be unnecessary in most cases, but useful for debugging and testing)
+    }),
+    []
+  )
+
+  /*console.log(
     '# Visible Items:',
     visibleKeys.length,
     '| Item IDs:',
     // @ts-expect-error - TODO need to fix
     visibleKeys.map((key) => items[key].id)
-  )
+  )*/
 
   return (
     <div
-      ref={setDomRef}
+      ref={domRef}
       className={className}
       onScroll={handleScroll}
       style={{ overflow: 'auto', border: '1px solid blue', ...style }}
     >
-      {/* @ts-expect-error - TODO need to fix */}
-      <div style={{ width, height, position: 'relative' }}>{visibleKeys.map((key) => renderItem(items[key], key))}</div>
+      <div style={{ width, height, position: 'relative' }}>
+        {visibleKeys.map((key, idx) => {
+          // @ts-ignore
+          const box = getBoundingBox(items[key], key)
+          return (
+            <div
+              style={{
+                position: 'absolute',
+                left: box.x,
+                top: box.y,
+                width: box.width,
+                height: box.height,
+              }}
+              key={key}
+            >
+              {/* @ts-ignore */}
+              {renderItem(items[key], key)}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
-}
+})
