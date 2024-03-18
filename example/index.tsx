@@ -13,7 +13,9 @@ const ITEMS = []
 // Merge Size and Bucket Calculation:
 // --- Component Cleanup ---
 // Function Optimization (removing HOFs):
+// startTransition / useDeferredValue:
 // Edge Case Handling:
+// Accessibility (focus management):
 const GRID_SIZE = 100
 for (let i = 0; i < GRID_SIZE; i++) {
   for (let j = 0; j < GRID_SIZE; j++) {
@@ -38,18 +40,7 @@ const getBoundingBox = (item, key) => {
 const renderItem = (item, key) => {
   const box = getBoundingBox(item, key)
   return (
-    <div
-      key={item}
-      style={{
-        backgroundColor: 'red',
-        color: 'white',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-        height: '100%',
-      }}
-    >
+    <div key={item} className="item" tabIndex={key + 1} autoFocus={key === 0}>
       {item}
     </div>
   )
