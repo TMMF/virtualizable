@@ -38,7 +38,6 @@ const getBoundingBox = (item, key) => {
 }
 
 const renderItem = (item, key) => {
-  const box = getBoundingBox(item, key)
   return (
     <div key={item} className="item" tabIndex={key + 1} autoFocus={key === 0}>
       {item}

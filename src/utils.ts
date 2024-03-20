@@ -25,13 +25,12 @@ export const throttle = <Args extends unknown[]>(fn: (...args: Args) => unknown,
 }
 
 export const measurePerformance = <Result>(name: string, fn: () => Result): Result => {
-  //if (__DEV__) return fn()
+  if (process.env.NODE_ENV !== 'development') return fn()
 
   performance.mark(`${name}-start`)
   const result = fn()
   performance.mark(`${name}-end`)
 
-  // @ts-expect-error - TODO need to fix
   const { duration } = performance.measure(`${name}-measure`, { start: `${name}-start`, end: `${name}-end` })
   performance.clearMarks()
   performance.clearMeasures()

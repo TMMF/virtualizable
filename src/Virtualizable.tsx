@@ -180,13 +180,13 @@ export const Virtualizable = forwardRef(function Virtualizable<I extends Item, K
     []
   )
 
-  /*console.log(
+  /* console.log(
     '# Visible Items:',
     visibleKeys.length,
     '| Item IDs:',
     // @ts-expect-error - TODO need to fix
     visibleKeys.map((key) => items[key].id)
-  )*/
+  ) */
 
   return (
     <div
@@ -196,6 +196,7 @@ export const Virtualizable = forwardRef(function Virtualizable<I extends Item, K
       style={{ overflow: 'auto', border: '1px solid blue', ...style }}
     >
       <div style={{ width, height, position: 'relative' }}>
+        {/* @ts-ignore */}
         {visibleKeys.map((key, idx) => {
           // @ts-ignore
           const box = getBoundingBox(items[key], key)
