@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as ReactDOM from 'react-dom/client'
-import { Virtualizable } from '../.'
+import { Virtualizable } from '..'
 
 const ITEMS = []
 
@@ -10,13 +10,12 @@ const ITEMS = []
 // Bucketing [FIXED]: 200x200 causes ~1ms render time; 300x300 causes ~1ms render time; 1000x1000 causes ~1ms render time (initialization is ~400ms; dev tools slow to crawl)
 // WebGL Acceleration: POSTPONED
 // IntersectionObserver Refinement: POSTPONED
-// Merge Size and Bucket Calculation:
-// --- Component Cleanup ---
+// --- Component Cleanup ---: 1000x1000 init is ~400ms; 2000x2000 init is ~1.4s
 // Function Optimization (removing HOFs):
 // startTransition / useDeferredValue:
 // Edge Case Handling:
 // Accessibility (focus management):
-const GRID_SIZE = 100
+const GRID_SIZE = 1000
 for (let i = 0; i < GRID_SIZE; i++) {
   for (let j = 0; j < GRID_SIZE; j++) {
     // @ts-expect-error - TODO need to fix

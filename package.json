@@ -1,8 +1,8 @@
 {
   "version": "0.0.0",
   "license": "MIT",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "files": [
     "dist",
     "src"
@@ -20,21 +20,27 @@
     "analyze": "size-limit --why",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
-    "validate": "npm run lint && npm run test && npm run size"
+    "validate": "npm run lint && npm run test && npm run size",
+    "clean": "rm -rf dist/"
   },
   "peerDependencies": {
     "react": ">=18"
   },
   "name": "virtualizable",
   "author": "Tiago Ferreira",
-  "module": "dist/virtualizable.esm.js",
+  "module": "./dist/virtualizable.esm.js",
+  "exports": {
+    "import": "./dist/virtualizable.esm.js",
+    "require": "./dist/index.js",
+    "default": "./dist/index.js"
+  },
   "size-limit": [
     {
-      "path": "dist/virtualizable.production.min.cjs",
+      "path": "./dist/virtualizable.production.min.cjs",
       "limit": "10 KB"
     },
     {
-      "path": "dist/virtualizable.esm.js",
+      "path": "./dist/virtualizable.esm.js",
       "limit": "10 KB"
     }
   ],

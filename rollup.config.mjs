@@ -44,7 +44,7 @@ export default {
   ],
   external: [/node_modules/],
   plugins: [
-    del({ targets: 'dist/*' }),
+    // del({ targets: 'dist/*' }),
     resolve({
       mainFields: ['module', 'main', 'browser'],
       extensions: [...RESOLVE_DEFAULTS.extensions, '.cjs', '.mjs', '.jsx'],
