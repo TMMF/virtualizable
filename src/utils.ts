@@ -1,16 +1,6 @@
-import {
-  Milliseconds,
-  BucketKey,
-  Buckets,
-  GetBoundingBox,
-  GetBucket,
-  ItemBase,
-  KeyBase,
-  PositiveNumber,
-  Size,
-} from './types'
+import * as types from './types'
 
-export const throttle = <Args extends unknown[]>(fn: (...args: Args) => unknown, wait: Milliseconds) => {
+export const throttle = <Args extends unknown[]>(fn: (...args: Args) => unknown, wait: types.Milliseconds) => {
   let inThrottle = false
   let lastTimeout: ReturnType<typeof setTimeout> | undefined = undefined
   let lastTime = 0
@@ -34,7 +24,7 @@ export const throttle = <Args extends unknown[]>(fn: (...args: Args) => unknown,
   }
 }
 
-export const measurePerformance = <Result>(name: string, fn: () => Result): Result => {
+export const measure = <Result>(name: string, fn: () => Result): Result => {
   if (process.env.NODE_ENV !== 'development') return fn()
 
   performance.mark(`${name}-start`)
@@ -45,19 +35,19 @@ export const measurePerformance = <Result>(name: string, fn: () => Result): Resu
   performance.clearMarks()
   performance.clearMeasures()
 
-  console.log(`${name}: ${duration}ms`)
+  console.debug(`${name}: ${duration}ms`)
   return result
 }
 
 // ---
 
-export const getBucketKey = (x: number, y: number): BucketKey => `${x}-${y}`
+const getBucketKey = (x: number, y: number): types.BucketKey => `${x}-${y}`
 
-const calculateCanvasSize = <Key extends KeyBase, Item extends ItemBase>(
+const calculateCanvasSize = <Key extends types.KeyBase, Item extends types.ItemBase>(
   items: Record<Key, Item>,
-  getBoundingBox: GetBoundingBox<Key, Item>
-): Size => {
-  return Object.keys(items).reduce(
+  getBoundingBox: types.GetBoundingBox<Key, Item>
+): types.Size =>
+  Object.keys(items).reduce(
     (acc, _key) => {
       const key = _key as Key
 
@@ -70,12 +60,12 @@ const calculateCanvasSize = <Key extends KeyBase, Item extends ItemBase>(
     },
     { width: 0, height: 0 }
   )
-}
-const calculateBuckets = <Key extends KeyBase, Item extends ItemBase>(
+
+const calculateBuckets = <Key extends types.KeyBase, Item extends types.ItemBase>(
   items: Record<Key, Item>,
-  getBucket: GetBucket<Key, Item>
+  getBucket: types.GetBucket<Key, Item>
 ) => {
-  const buckets: Record<BucketKey, Key[]> = {}
+  const buckets: Record<types.BucketKey, Key[]> = {}
 
   Object.keys(items).forEach((_key) => {
     const key = _key as Key
@@ -93,19 +83,19 @@ const calculateBuckets = <Key extends KeyBase, Item extends ItemBase>(
   return buckets
 }
 
-export const preprocess = <Key extends KeyBase, Item extends ItemBase>(args: {
+export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBase>(args: {
   items: Record<Key, Item>
-  getBoundingBox: GetBoundingBox<Key, Item>
-  customGetBucket?: GetBucket<Key, Item>
-  precomputedCanvasSize?: Size
-  precomputedBucketSize?: PositiveNumber
-  precomputedBuckets?: Buckets<Key>
+  getBoundingBox: types.GetBoundingBox<Key, Item>
+  customGetBucket?: types.GetBucket<Key, Item>
+  precomputedCanvasSize?: types.Size
+  precomputedBucketSize?: types.PositiveNumber
+  precomputedBuckets?: types.Buckets<Key>
 }) => {
   const { items, getBoundingBox, customGetBucket, precomputedCanvasSize, precomputedBucketSize, precomputedBuckets } =
     args
 
   const size = precomputedCanvasSize ?? calculateCanvasSize(items, getBoundingBox)
-  const bucketSize = precomputedBucketSize ?? Math.min(size.width, size.height, 500)
+  const bucketSize = precomputedBucketSize ?? Math.max(100, Math.min(size.width, size.height, 1000))
 
   const getBucket =
     customGetBucket ??
@@ -116,4 +106,66 @@ export const preprocess = <Key extends KeyBase, Item extends ItemBase>(args: {
   const buckets = precomputedBuckets ?? calculateBuckets(items, getBucket)
 
   return { size, bucketSize, buckets }
+}
+
+type vkArgs<Key extends types.KeyBase, Item extends types.ItemBase> = {
+  scroll: types.Position
+  bucketSize: types.PositiveNumber
+  buckets: Record<types.BucketKey, Key[]>
+  getBoundingBox: types.GetBoundingBox<Key, Item>
+  viewportSize: types.Size
+  items: Record<Key, Item>
+}
+
+export const calculateVisibleKeys = <Key extends types.KeyBase, Item extends types.ItemBase>({
+  scroll,
+  bucketSize,
+  buckets,
+  getBoundingBox,
+  viewportSize,
+  items,
+}: vkArgs<Key, Item>) => {
+  const bucketMinX = Math.floor(scroll.x / bucketSize)
+  const bucketMinY = Math.floor(scroll.y / bucketSize)
+  const bucketMaxX = Math.floor((scroll.x + viewportSize.width) / bucketSize)
+  const bucketMaxY = Math.floor((scroll.y + viewportSize.height) / bucketSize)
+
+  const visibleKeys: Key[] = []
+
+  for (let x = bucketMinX - 1; x <= bucketMaxX + 1; x++) {
+    for (let y = bucketMinY - 1; y <= bucketMaxY + 1; y++) {
+      // Relevant buckets
+      const bucketKey = getBucketKey(x, y)
+      const bucket = buckets[bucketKey] ?? []
+      bucket.forEach((key) => {
+        const item = items[key]
+        const box = getBoundingBox(item, key)
+
+        if (
+          box.x < scroll.x + viewportSize.width &&
+          box.y < scroll.y + viewportSize.height &&
+          box.x + box.width > scroll.x &&
+          box.y + box.height > scroll.y
+        ) {
+          visibleKeys.push(key)
+        }
+      })
+    }
+  }
+
+  return visibleKeys
+}
+
+export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) => {
+  if (a.size !== b.size) return false
+  return [...a].every((item) => b.has(item))
+}
+
+export const areArraysEqual = <T>(a: T[], b: T[]) => {
+  if (a.length !== b.length) return false
+  return a.every((item, i) => item === b[i])
+}
+
+export const areKeysEqual = <Key extends types.KeyBase>(a: Key[], b: Key[]) => {
+  return areSetsEqual(new Set(a), new Set(b))
 }

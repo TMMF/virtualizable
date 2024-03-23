@@ -11,7 +11,7 @@ const ITEMS = []
 // WebGL Acceleration: POSTPONED
 // IntersectionObserver Refinement: POSTPONED
 // --- Component Cleanup ---: 1000x1000 init is ~400ms; 2000x2000 init is ~1.4s
-// Function Optimization (removing HOFs):
+// Function Optimization (removing HOFs): 1000x1000 init added about ~40ms (???)
 // startTransition / useDeferredValue:
 // Edge Case Handling:
 // Accessibility (focus management):
