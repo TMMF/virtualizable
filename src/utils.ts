@@ -44,7 +44,7 @@ export const measure = <Result>(name: string, fn: () => Result): Result => {
 const getBucketKey = (x: number, y: number): types.BucketKey => `${x}-${y}`
 
 const calculateCanvasSize = <Key extends types.KeyBase, Item extends types.ItemBase>(
-  items: Record<Key, Item>,
+  items: types.Collection<Key, Item>,
   getBoundingBox: types.GetBoundingBox<Key, Item>
 ): types.Size =>
   Object.keys(items).reduce(
@@ -62,7 +62,7 @@ const calculateCanvasSize = <Key extends types.KeyBase, Item extends types.ItemB
   )
 
 const calculateBuckets = <Key extends types.KeyBase, Item extends types.ItemBase>(
-  items: Record<Key, Item>,
+  items: types.Collection<Key, Item>,
   getBucket: types.GetBucket<Key, Item>
 ) => {
   const buckets: Record<types.BucketKey, Key[]> = {}
@@ -84,7 +84,7 @@ const calculateBuckets = <Key extends types.KeyBase, Item extends types.ItemBase
 }
 
 export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBase>(args: {
-  items: Record<Key, Item>
+  items: types.Collection<Key, Item>
   getBoundingBox: types.GetBoundingBox<Key, Item>
   customGetBucket?: types.GetBucket<Key, Item>
   precomputedCanvasSize?: types.Size
@@ -111,10 +111,10 @@ export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBas
 type vkArgs<Key extends types.KeyBase, Item extends types.ItemBase> = {
   scroll: types.Position
   bucketSize: types.PositiveNumber
-  buckets: Record<types.BucketKey, Key[]>
+  buckets: types.Buckets<Key>
   getBoundingBox: types.GetBoundingBox<Key, Item>
   viewportSize: types.Size
-  items: Record<Key, Item>
+  items: types.Collection<Key, Item>
 }
 
 export const calculateVisibleKeys = <Key extends types.KeyBase, Item extends types.ItemBase>({

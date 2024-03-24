@@ -15,7 +15,7 @@ const ITEMS = []
 // startTransition / useDeferredValue:
 // Edge Case Handling:
 // Accessibility (focus management):
-const GRID_SIZE = 1000
+const GRID_SIZE = 20
 for (let i = 0; i < GRID_SIZE; i++) {
   for (let j = 0; j < GRID_SIZE; j++) {
     // @ts-expect-error - TODO need to fix
@@ -46,13 +46,8 @@ const renderItem = (item, key) => {
 
 const App = () => {
   return (
-    <div style={{ border: '1px solid green' }}>
-      <Virtualizable
-        style={{ width: 300, height: 300 }}
-        items={ITEMS}
-        getBoundingBox={getBoundingBox}
-        renderItem={renderItem}
-      />
+    <div style={{ border: '1px solid green', width: 300, height: 300 }}>
+      <Virtualizable items={ITEMS} getBoundingBox={getBoundingBox} renderItem={renderItem} />
     </div>
   )
 }

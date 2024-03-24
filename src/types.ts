@@ -9,6 +9,7 @@ export type Box = Position & Size
 
 export type ItemBase = unknown
 export type KeyBase = string | number
+export type Collection<Key extends KeyBase, Item extends ItemBase> = Record<Key, Item>
 export type BucketKey = `${number}-${number}`
 export type Buckets<Key extends KeyBase> = Record<BucketKey, Key[]>
 
