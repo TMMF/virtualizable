@@ -23,7 +23,6 @@ export interface VirtualizableProps<Key extends types.KeyBase, Item extends type
 }
 
 // TODO:
-// - Fix initial empty render
 // - Support updating items
 // - Create imperative API
 // - Support resizing (https://developer.mozilla.org/en-US/docs/Web/API/Resize_Observer_API)
@@ -102,7 +101,10 @@ const Viewport = React.memo(
       [bucketSize, buckets, getBoundingBox, items]
     )
 
-    const [visibleKeys, setVisibleKeys] = React.useState<Key[]>(() => cvk({ x: 0, y: 0 }))
+    const [visibleKeys, setVisibleKeys] = React.useState<Key[]>([])
+    // Need to useEffect to set initial visible keys in order to ensure domRef.current is set first (only run on mount)
+    React.useEffect(() => setVisibleKeys(cvk({ x: 0, y: 0 })), [])
+
     const visibleEntries = React.useMemo(
       () => visibleKeys.map((key): [Key, Item] => [key, items[key]]),
       [items, visibleKeys]
@@ -167,33 +169,25 @@ const Canvas = React.memo(
     // @ts-ignore
     ref: React.Ref<HTMLDivElement>
   ) {
-    const { as: Component = 'div', renderItem, style, ...rest } = props
+    const { as: Component = 'div', renderItem, style, children, ...rest } = props
     const { size, visibleEntries, getBoundingBox } = React.useContext(CanvasContext)
     const { width, height } = size
 
     return (
       // @ts-ignore
       <Component {...rest} style={{ width, height, position: 'relative', ...style }}>
-        {visibleEntries.map(([_key, _item]) => {
-          const key = _key as Key
-          const item = _item as Item
-
-          /* const box = getBoundingBox(item, key)
-          return (
-            <ItemContext.Provider key={key} value={{ box }}>
-              {renderItem(item, key)}
-            </ItemContext.Provider>
-          ) */
-
-          // @ts-ignore
-          return <CanvasItem key={key} k={key} item={item} getBoundingBox={getBoundingBox} renderItem={renderItem} />
-        })}
+        {visibleEntries.map(([key, item]) => (
+          // @ts-expect-error - Item != Item; gotta fix the types
+          <ItemProvider key={key} k={key} item={item} getBoundingBox={getBoundingBox} renderItem={renderItem} />
+        ))}
+        {children}
       </Component>
     )
   })
 )
 
-const CanvasItem = React.memo(function CanvasItem(props: {
+// Breaking this up allows memoization and preventing unnecessary re-renders
+const ItemProvider = React.memo(function ItemProvider(props: {
   item: types.ItemBase
   k: types.KeyBase
   getBoundingBox: types.GetBoundingBox<types.KeyBase, types.ItemBase>
@@ -208,10 +202,11 @@ type ItemProps = JSX.IntrinsicElements['div'] & { as?: string }
 const Item = React.memo(
   // @ts-ignore
   React.forwardRef(function Item(props: ItemProps, ref: React.Ref<HTMLDivElement>) {
-    const { as: Component = 'div', style, ...rest } = props
+    const { as: Component = 'div', style, children, ...rest } = props
     const { box } = React.useContext(ItemContext)
 
     return (
+      // @ts-ignore
       <Component
         {...rest}
         // @ts-ignore
@@ -223,7 +218,9 @@ const Item = React.memo(
           height: box.height,
           ...style,
         }}
-      />
+      >
+        {children}
+      </Component>
     )
   })
 )
@@ -257,29 +254,9 @@ export const Virtualizable = Object.assign(
     return (
       // @ts-ignore
       <Viewport {...viewportProps}>
-        <Canvas renderItem={(item, key) => <Item key={key}>{renderItem(item as Item, key as Key)}</Item>}>
-          {children}
-        </Canvas>
+        <Canvas renderItem={(item, key) => <Item>{renderItem(item as Item, key as Key)}</Item>}>{children}</Canvas>
       </Viewport>
     )
   }),
   { Viewport, Canvas, Item }
 )
-
-/*
-<Virtualizable renderItem={(item, key) => ...}</Item>}>
-  <RandomComponent1 />
-  <RandomComponent2 />
-</Virtualizable>
-
-<Viewport {...props}>
-  <Canvas renderItem={(item, key) => <Item key={key}>{...}</Item>} />
-</Viewport>
-
-<Viewport {...props}>
-  <Canvas renderItem={(item, key) => <Item key={key}>{...}</Item>}>
-    <RandomComponent1 />
-    <RandomComponent2 />
-  </Canvas>
-</Viewport>
-*/
