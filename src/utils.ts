@@ -115,6 +115,7 @@ type vkArgs<Key extends types.KeyBase, Item extends types.ItemBase> = {
   getBoundingBox: types.GetBoundingBox<Key, Item>
   viewportSize: types.Size
   items: types.Collection<Key, Item>
+  overscan?: types.PositiveNumber
 }
 
 export const calculateVisibleKeys = <Key extends types.KeyBase, Item extends types.ItemBase>({
@@ -124,11 +125,13 @@ export const calculateVisibleKeys = <Key extends types.KeyBase, Item extends typ
   getBoundingBox,
   viewportSize,
   items,
+  overscan = 0,
 }: vkArgs<Key, Item>) => {
-  const bucketMinX = Math.floor(scroll.x / bucketSize)
-  const bucketMinY = Math.floor(scroll.y / bucketSize)
-  const bucketMaxX = Math.floor((scroll.x + viewportSize.width) / bucketSize)
-  const bucketMaxY = Math.floor((scroll.y + viewportSize.height) / bucketSize)
+  // TODO: this logic doesn't necessarily work with a customGetBucket fn
+  const bucketMinX = Math.floor((scroll.x - overscan) / bucketSize)
+  const bucketMinY = Math.floor((scroll.y - overscan) / bucketSize)
+  const bucketMaxX = Math.floor((scroll.x + viewportSize.width + overscan) / bucketSize)
+  const bucketMaxY = Math.floor((scroll.y + viewportSize.height + overscan) / bucketSize)
 
   const visibleKeys: Key[] = []
 
@@ -142,10 +145,10 @@ export const calculateVisibleKeys = <Key extends types.KeyBase, Item extends typ
         const box = getBoundingBox(item, key)
 
         if (
-          box.x < scroll.x + viewportSize.width &&
-          box.y < scroll.y + viewportSize.height &&
-          box.x + box.width > scroll.x &&
-          box.y + box.height > scroll.y
+          box.x < scroll.x + viewportSize.width + overscan &&
+          box.y < scroll.y + viewportSize.height + overscan &&
+          box.x + box.width > scroll.x - overscan &&
+          box.y + box.height > scroll.y - overscan
         ) {
           visibleKeys.push(key)
         }

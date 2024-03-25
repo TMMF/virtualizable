@@ -6,15 +6,14 @@ export interface VirtualizableProps<Key extends types.KeyBase, Item extends type
   items: types.Collection<Key, Item>
   getBoundingBox: types.GetBoundingBox<Key, Item> // Q: should this handle % based positioning?
   renderItem: types.RenderItem<Key, Item>
-  // ---
+  // --- Performance Optimizations ---
   bucketSize?: types.PositiveNumber // Defaults to the smaller of the two dimensions (width or height); MAXING OUT AT 500x500
   getBucket?: types.GetBucket<Key, Item> // Preprocessing makes this faster, but component will handle it if not provided (rets [x, y])
   buckets?: types.Buckets<Key> // Preprocessing makes this faster, but component will handle it if not provided
   canvasSize?: types.Size // Precomputed size (if available)
-  // ---
-  overscan?: types.PositiveNumber // Defaults to ??? (needs to at least 1 for tabbing purposes)
+  overscan?: types.PositiveNumber // Defaults to 100px
   scrollThrottle?: types.Milliseconds // Defaults to 100ms
-  // ---
+  // --- Event Handlers ---
   //onCanvasSizeChange?: // size change
   //onBucketsChange?: // buckets change
   //onPreprocessed?: // Preprocessed data (when it finishes; indicative of when the component is ready to render)
@@ -26,11 +25,14 @@ export interface VirtualizableProps<Key extends types.KeyBase, Item extends type
 // - Support updating items
 // - Create imperative API
 // - Support resizing (https://developer.mozilla.org/en-US/docs/Web/API/Resize_Observer_API)
+// - Support intersection observer on items (for event handlers)
 // - Support infinite scrolling canvas
 // - Support streaming items (for infinite scrolling)
 // - Context for scrolling (?)
 // - useTransition/useDeferredValue for rendered items
 // - Expose utils for customization
+// - Support keyboard navigation (accessibility)
+// - Support aria-live (?) for screen readers
 
 const CanvasContext = React.createContext({
   size: { width: 0, height: 0 },
@@ -63,6 +65,7 @@ const Viewport = React.memo(
       canvasSize: precomputedCanvasSize,
       bucketSize: precomputedBucketSize,
       buckets: precomputedBuckets,
+      overscan = 100,
       as: Component = 'div',
       style,
       children,
@@ -96,9 +99,10 @@ const Viewport = React.memo(
             getBoundingBox,
             viewportSize: domRef.current?.getBoundingClientRect() ?? { width: 0, height: 0 },
             items,
+            overscan,
           })
         ),
-      [bucketSize, buckets, getBoundingBox, items]
+      [bucketSize, buckets, getBoundingBox, items, overscan]
     )
 
     const [visibleKeys, setVisibleKeys] = React.useState<Key[]>([])
@@ -137,7 +141,7 @@ const Viewport = React.memo(
       [size, visibleEntries, getBoundingBox]
     )
 
-    console.log(
+    console.debug(
       '# Visible Items:',
       visibleKeys.length,
       '| Item IDs:',
