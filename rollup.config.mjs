@@ -4,10 +4,9 @@ import terser from '@rollup/plugin-terser'
 import json from '@rollup/plugin-json'
 import sourceMaps from 'rollup-plugin-sourcemaps'
 import typescript from 'rollup-plugin-typescript2'
-//import replace from '@rollup/plugin-replace'
-import del from 'rollup-plugin-delete'
-import path from 'path'
-import fs from 'fs-extra'
+import replace from '@rollup/plugin-replace'
+import { babel } from '@rollup/plugin-babel';
+import { DEFAULT_EXTENSIONS as DEFAULT_BABEL_EXTENSIONS } from '@babel/core'
 
 import pkg from './package.json' with { type: "json" }
 
@@ -21,14 +20,7 @@ export default {
   },
   output: [
     {
-      file: 'dist/virtualizable.development.cjs',
-      format: 'cjs',
-      sourcemap: true,
-      exports: 'named',
-      globals: { react: 'React' },
-    },
-    {
-      file: 'dist/virtualizable.production.min.cjs', //pkg.main,
+      file: pkg.main,
       format: 'cjs',
       sourcemap: true,
       exports: 'named',
@@ -44,7 +36,6 @@ export default {
   ],
   external: [/node_modules/],
   plugins: [
-    // del({ targets: 'dist/*' }),
     resolve({
       mainFields: ['module', 'main', 'browser'],
       extensions: [...RESOLVE_DEFAULTS.extensions, '.cjs', '.mjs', '.jsx'],
@@ -52,14 +43,20 @@ export default {
     commonjs(),
     json(),
     typescript({ tsconfig: 'tsconfig.json' }),
-    // TODO: need to fix this to support dev and prod builds
-    /* replace({
+    babel({
+      exclude: 'node_modules/**',
+      babelHelpers: 'bundled',
+      presets: ['@babel/preset-env', '@babel/preset-react'],
+      plugins: ['annotate-pure-calls'],
+      extensions: [...DEFAULT_BABEL_EXTENSIONS, 'ts', 'tsx'],
+    }),
+    replace({
       preventAssignment: true,
-      'process.env.NODE_ENV': JSON.stringify('production'),
-      __DEV__: JSON.stringify(false),
-    }), */
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+      __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
+    }),
     sourceMaps(),
-    terser({
+    process.env.NODE_ENV === 'production' ? terser({
       output: { comments: false },
       compress: {
         keep_infinity: true,
@@ -70,20 +67,6 @@ export default {
       module: false,
       toplevel: true,
       warnings: true,
-    }),
-    {
-      // Custom plugin to generate an entry file for the package
-      closeBundle: () => {
-        const contents = `'use strict'
-
-if (process.env.NODE_ENV === 'production') {
-  module.exports = require('./virtualizable.production.min.cjs')
-} else {
-  module.exports = require('./virtualizable.development.cjs')
-}
-`
-        return fs.outputFile(path.join('dist/', 'index.js'), contents)
-      },
-    },
+    }) : undefined,
   ],
 }

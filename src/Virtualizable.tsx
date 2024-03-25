@@ -50,169 +50,169 @@ const ItemContext = React.createContext({
 
 type ViewportProps<Key extends types.KeyBase, Item extends types.ItemBase> = JSX.IntrinsicElements['div'] &
   Omit<VirtualizableProps<Key, Item>, 'renderItem'> & { as?: string }
-const _Viewport = <Key extends types.KeyBase, Item extends types.ItemBase>(
-  props: ViewportProps<Key, Item>,
-  // @ts-ignore
-  ref: React.Ref<HTMLDivElement>
-) => {
-  const {
-    items,
-    getBoundingBox,
-    scrollThrottle = 50,
-    getBucket: customGetBucket,
-    canvasSize: precomputedCanvasSize,
-    bucketSize: precomputedBucketSize,
-    buckets: precomputedBuckets,
-    as: Component = 'div',
-    style,
-    children,
-    onScroll,
-    ...rest
-  } = props
-
-  const { size, bucketSize, buckets } = React.useMemo(
-    () =>
-      utils.measure('Preprocessing', () =>
-        utils.preprocess({
-          items,
-          getBoundingBox,
-          customGetBucket,
-          precomputedCanvasSize,
-          precomputedBucketSize,
-          precomputedBuckets,
-        })
-      ),
-    [customGetBucket, getBoundingBox, items, precomputedBucketSize, precomputedBuckets, precomputedCanvasSize]
-  )
-
-  const domRef = React.useRef<HTMLDivElement | null>(null)
-  const cvk = React.useCallback(
-    (scroll: types.Position) =>
-      utils.measure('Calculating Visible Keys', () =>
-        utils.calculateVisibleKeys({
-          scroll,
-          bucketSize,
-          buckets,
-          getBoundingBox,
-          viewportSize: domRef.current?.getBoundingClientRect() ?? { width: 0, height: 0 },
-          items,
-        })
-      ),
-    [bucketSize, buckets, getBoundingBox, items]
-  )
-
-  const [visibleKeys, setVisibleKeys] = React.useState<Key[]>(() => cvk({ x: 0, y: 0 }))
-  const visibleEntries = React.useMemo(
-    () => visibleKeys.map((key): [Key, Item] => [key, items[key]]),
-    [items, visibleKeys]
-  )
-
-  const throttledScroll = React.useMemo(
-    () =>
-      utils.throttle((event: React.UIEvent<HTMLDivElement>) => {
-        const target = event.target as HTMLDivElement
-        const newVisibleKeys = cvk({ x: target.scrollLeft, y: target.scrollTop })
-
-        setVisibleKeys((prevVisibleKeys) =>
-          // Prevents unnecessary re-renders
-          utils.areKeysEqual(prevVisibleKeys, newVisibleKeys) ? prevVisibleKeys : newVisibleKeys
-        )
-      }, scrollThrottle),
-    [cvk, scrollThrottle]
-  )
-
-  const _onScroll = React.useCallback(
-    (event: React.UIEvent<HTMLDivElement>) => {
-      throttledScroll(event)
-      onScroll?.(event)
-    },
-    [throttledScroll, onScroll]
-  )
-
-  const canvasContextValue = React.useMemo(
-    () => ({ size, visibleEntries, getBoundingBox }),
-    [size, visibleEntries, getBoundingBox]
-  )
-
-  console.log(
-    '# Visible Items:',
-    visibleKeys.length,
-    '| Item IDs:',
-    visibleKeys.map((key) => items[key])
-  )
-
-  return (
+const Viewport = React.memo(
+  React.forwardRef(function Viewport<Key extends types.KeyBase, Item extends types.ItemBase>(
+    props: ViewportProps<Key, Item>,
     // @ts-ignore
-    <Component
-      {...rest}
-      ref={domRef}
-      onScroll={_onScroll}
-      style={{ overflow: 'auto', border: '1px solid blue', width: '100%', height: '100%', ...style }}
-    >
-      {/* @ts-expect-error - Item != Item; gotta fix the types */}
-      <CanvasContext.Provider value={canvasContextValue}>{children}</CanvasContext.Provider>
-    </Component>
-  )
-}
-//_Viewport.displayName = 'Viewport'
-const Viewport = React.memo(React.forwardRef(_Viewport))
+    ref: React.Ref<HTMLDivElement>
+  ) {
+    const {
+      items,
+      getBoundingBox,
+      scrollThrottle = 50,
+      getBucket: customGetBucket,
+      canvasSize: precomputedCanvasSize,
+      bucketSize: precomputedBucketSize,
+      buckets: precomputedBuckets,
+      as: Component = 'div',
+      style,
+      children,
+      onScroll,
+      ...rest
+    } = props
+
+    const { size, bucketSize, buckets } = React.useMemo(
+      () =>
+        utils.measure('Preprocessing', () =>
+          utils.preprocess({
+            items,
+            getBoundingBox,
+            customGetBucket,
+            precomputedCanvasSize,
+            precomputedBucketSize,
+            precomputedBuckets,
+          })
+        ),
+      [customGetBucket, getBoundingBox, items, precomputedBucketSize, precomputedBuckets, precomputedCanvasSize]
+    )
+
+    const domRef = React.useRef<HTMLDivElement | null>(null)
+    const cvk = React.useCallback(
+      (scroll: types.Position) =>
+        utils.measure('Calculating Visible Keys', () =>
+          utils.calculateVisibleKeys({
+            scroll,
+            bucketSize,
+            buckets,
+            getBoundingBox,
+            viewportSize: domRef.current?.getBoundingClientRect() ?? { width: 0, height: 0 },
+            items,
+          })
+        ),
+      [bucketSize, buckets, getBoundingBox, items]
+    )
+
+    const [visibleKeys, setVisibleKeys] = React.useState<Key[]>(() => cvk({ x: 0, y: 0 }))
+    const visibleEntries = React.useMemo(
+      () => visibleKeys.map((key): [Key, Item] => [key, items[key]]),
+      [items, visibleKeys]
+    )
+
+    const throttledScroll = React.useMemo(
+      () =>
+        utils.throttle((event: React.UIEvent<HTMLDivElement>) => {
+          const target = event.target as HTMLDivElement
+          const newVisibleKeys = cvk({ x: target.scrollLeft, y: target.scrollTop })
+
+          setVisibleKeys((prevVisibleKeys) =>
+            // Prevents unnecessary re-renders
+            utils.areKeysEqual(prevVisibleKeys, newVisibleKeys) ? prevVisibleKeys : newVisibleKeys
+          )
+        }, scrollThrottle),
+      [cvk, scrollThrottle]
+    )
+
+    const _onScroll = React.useCallback(
+      (event: React.UIEvent<HTMLDivElement>) => {
+        throttledScroll(event)
+        onScroll?.(event)
+      },
+      [throttledScroll, onScroll]
+    )
+
+    const canvasContextValue = React.useMemo(
+      () => ({ size, visibleEntries, getBoundingBox }),
+      [size, visibleEntries, getBoundingBox]
+    )
+
+    console.log(
+      '# Visible Items:',
+      visibleKeys.length,
+      '| Item IDs:',
+      visibleKeys.map((key) => items[key])
+    )
+
+    return (
+      // @ts-ignore
+      <Component
+        {...rest}
+        ref={domRef}
+        onScroll={_onScroll}
+        style={{ overflow: 'auto', border: '1px solid blue', width: '100%', height: '100%', ...style }}
+      >
+        {/* @ts-expect-error - Item != Item; gotta fix the types */}
+        <CanvasContext.Provider value={canvasContextValue}>{children}</CanvasContext.Provider>
+      </Component>
+    )
+  })
+)
 
 type CanvasProps<Key extends types.KeyBase, Item extends types.ItemBase> = JSX.IntrinsicElements['div'] & {
   as?: string
   renderItem: types.RenderItem<Key, Item>
 }
-const _Canvas = <Key extends types.KeyBase, Item extends types.ItemBase>(
-  props: CanvasProps<Key, Item>,
-  // @ts-ignore
-  ref: React.Ref<HTMLDivElement>
-) => {
-  const { as: Component = 'div', renderItem, style, ...rest } = props
-  const { size, visibleEntries, getBoundingBox } = React.useContext(CanvasContext)
-  const { width, height } = size
-
-  return (
+const Canvas = React.memo(
+  React.forwardRef(function Canvas<Key extends types.KeyBase, Item extends types.ItemBase>(
+    props: CanvasProps<Key, Item>,
     // @ts-ignore
-    <Component {...rest} style={{ width, height, position: 'relative', ...style }}>
-      {visibleEntries.map(([_key, _item]) => {
-        const key = _key as Key
-        const item = _item as Item
+    ref: React.Ref<HTMLDivElement>
+  ) {
+    const { as: Component = 'div', renderItem, style, ...rest } = props
+    const { size, visibleEntries, getBoundingBox } = React.useContext(CanvasContext)
+    const { width, height } = size
 
-        const box = getBoundingBox(item, key)
-        return (
-          <ItemContext.Provider key={key} value={{ box }}>
-            {renderItem(item, key)}
-          </ItemContext.Provider>
-        )
-      })}
-    </Component>
-  )
-}
-//_Canvas.displayName = 'Canvas'
-const Canvas = React.memo(React.forwardRef(_Canvas))
+    return (
+      // @ts-ignore
+      <Component {...rest} style={{ width, height, position: 'relative', ...style }}>
+        {visibleEntries.map(([_key, _item]) => {
+          const key = _key as Key
+          const item = _item as Item
+
+          const box = getBoundingBox(item, key)
+          return (
+            <ItemContext.Provider key={key} value={{ box }}>
+              {renderItem(item, key)}
+            </ItemContext.Provider>
+          )
+        })}
+      </Component>
+    )
+  })
+)
 
 type ItemProps = JSX.IntrinsicElements['div'] & { as?: string }
-// @ts-ignore
-const _Item = (props: ItemProps, ref: React.Ref<HTMLDivElement>) => {
-  const { as: Component = 'div', style, ...rest } = props
-  const { box } = React.useContext(ItemContext)
+const Item = React.memo(
+  // @ts-ignore
+  React.forwardRef(function Item(props: ItemProps, ref: React.Ref<HTMLDivElement>) {
+    const { as: Component = 'div', style, ...rest } = props
+    const { box } = React.useContext(ItemContext)
 
-  return (
-    <Component
-      {...rest}
-      // @ts-ignore
-      style={{
-        position: 'absolute',
-        left: box.x,
-        top: box.y,
-        width: box.width,
-        height: box.height,
-        ...style,
-      }}
-    />
-  )
-}
-//_Item.displayName = 'Item'
-const Item = React.memo(React.forwardRef(_Item))
+    return (
+      <Component
+        {...rest}
+        // @ts-ignore
+        style={{
+          position: 'absolute',
+          left: box.x,
+          top: box.y,
+          width: box.width,
+          height: box.height,
+          ...style,
+        }}
+      />
+    )
+  })
+)
 
 export const Virtualizable = Object.assign(
   React.forwardRef(function Virtualizable<Key extends types.KeyBase, Item extends types.ItemBase>(
