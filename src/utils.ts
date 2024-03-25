@@ -95,6 +95,8 @@ export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBas
     args
 
   const size = precomputedCanvasSize ?? calculateCanvasSize(items, getBoundingBox)
+  // TODO: this methodology for bucketSize isn't great if there's clustering of items or if items are tightly packed
+  // on a large viewport
   const bucketSize = precomputedBucketSize ?? Math.max(100, Math.min(size.width, size.height, 1000))
 
   const getBucket =

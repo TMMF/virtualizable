@@ -29,10 +29,10 @@ export interface VirtualizableProps<Key extends types.KeyBase, Item extends type
 // - Support infinite scrolling canvas
 // - Support streaming items (for infinite scrolling)
 // - Context for scrolling (?)
-// - useTransition/useDeferredValue for rendered items
 // - Expose utils for customization
 // - Support keyboard navigation (accessibility)
 // - Support aria-live (?) for screen readers
+// - Create documentation with Docusaurus (https://docusaurus.io/)
 
 const CanvasContext = React.createContext({
   size: { width: 0, height: 0 },
@@ -105,6 +105,7 @@ const Viewport = React.memo(
       [bucketSize, buckets, getBoundingBox, items, overscan]
     )
 
+    const [, startTransition] = React.useTransition()
     const [visibleKeys, setVisibleKeys] = React.useState<Key[]>([])
     // Need to useEffect to set initial visible keys in order to ensure domRef.current is set first (only run on mount)
     React.useEffect(() => setVisibleKeys(cvk({ x: 0, y: 0 })), [])
@@ -120,9 +121,11 @@ const Viewport = React.memo(
           const target = event.target as HTMLDivElement
           const newVisibleKeys = cvk({ x: target.scrollLeft, y: target.scrollTop })
 
-          setVisibleKeys((prevVisibleKeys) =>
-            // Prevents unnecessary re-renders
-            utils.areKeysEqual(prevVisibleKeys, newVisibleKeys) ? prevVisibleKeys : newVisibleKeys
+          startTransition(() =>
+            setVisibleKeys((prevVisibleKeys) =>
+              // Prevents unnecessary re-renders
+              utils.areKeysEqual(prevVisibleKeys, newVisibleKeys) ? prevVisibleKeys : newVisibleKeys
+            )
           )
         }, scrollThrottle),
       [cvk, scrollThrottle]
