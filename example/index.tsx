@@ -29,10 +29,10 @@ const getBoundingBox = (item, key) => {
   const j = Math.floor(Number(key) / GRID_SIZE)
 
   return {
-    x: i * 200,
-    y: j * 200,
-    width: 100,
-    height: 100,
+    x: i * 100,
+    y: j * 100,
+    width: 50,
+    height: 50,
   }
 }
 
@@ -46,7 +46,7 @@ const renderItem = (item, key) => {
 
 const App = () => {
   return (
-    <div style={{ border: '1px solid green', width: 300, height: 300 }}>
+    <div style={{ border: '1px solid green', width: 500, height: 500 }}>
       <Virtualizable items={ITEMS} getBoundingBox={getBoundingBox} renderItem={renderItem} />
     </div>
   )

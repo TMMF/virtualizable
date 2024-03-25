@@ -178,17 +178,31 @@ const Canvas = React.memo(
           const key = _key as Key
           const item = _item as Item
 
-          const box = getBoundingBox(item, key)
+          /* const box = getBoundingBox(item, key)
           return (
             <ItemContext.Provider key={key} value={{ box }}>
               {renderItem(item, key)}
             </ItemContext.Provider>
-          )
+          ) */
+
+          // @ts-ignore
+          return <CanvasItem key={key} k={key} item={item} getBoundingBox={getBoundingBox} renderItem={renderItem} />
         })}
       </Component>
     )
   })
 )
+
+const CanvasItem = React.memo(function CanvasItem(props: {
+  item: types.ItemBase
+  k: types.KeyBase
+  getBoundingBox: types.GetBoundingBox<types.KeyBase, types.ItemBase>
+  renderItem: types.RenderItem<types.KeyBase, types.ItemBase>
+}) {
+  const { item, k: key, getBoundingBox, renderItem } = props
+  const box = getBoundingBox(item, key)
+  return <ItemContext.Provider value={{ box }}>{renderItem(item, key)}</ItemContext.Provider>
+})
 
 type ItemProps = JSX.IntrinsicElements['div'] & { as?: string }
 const Item = React.memo(

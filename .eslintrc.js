@@ -7,7 +7,9 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
   ],
-  rules: {},
+  rules: {
+    'react/prop-types': 0,
+  },
   root: true,
   settings: {
     react: {
