@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as ReactDOM from 'react-dom/client'
-import { Virtualizable } from '..'
+import { Virtualizable } from '@virtualizable/react'
 
 const ITEMS = []
 
@@ -12,9 +12,7 @@ const ITEMS = []
 // IntersectionObserver Refinement: POSTPONED
 // --- Component Cleanup ---: 1000x1000 init is ~400ms; 2000x2000 init is ~1.4s
 // Function Optimization (removing HOFs): 1000x1000 init added about ~40ms (???)
-// startTransition / useDeferredValue:
-// Edge Case Handling:
-// Accessibility (focus management):
+// startTransition / useDeferredValue: 1000x1000 init ~280ms; 2000x2000 init ~1.17s; 3000x3000 init ~3.3s (scroll time is ~0.1ms)
 const GRID_SIZE = 100
 for (let i = 0; i < GRID_SIZE; i++) {
   for (let j = 0; j < GRID_SIZE; j++) {
@@ -23,7 +21,6 @@ for (let i = 0; i < GRID_SIZE; i++) {
   }
 }
 
-//const getBoundingBox = (item) => item
 const getBoundingBox = (item, key) => {
   const i = Number(key) % GRID_SIZE
   const j = Math.floor(Number(key) / GRID_SIZE)
