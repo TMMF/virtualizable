@@ -2,7 +2,7 @@ import * as React from 'react'
 import * as ReactDOM from 'react-dom/client'
 import { Virtualizable } from '@virtualizable/react'
 
-const ITEMS = []
+const ITEMS: string[] = []
 
 // Naive Approach: 100x100 causes ~2-3ms render time; 200x200 causes ~8-9ms render time
 // Calculate on scroll handler: 200x200 causes ~13ms render time
@@ -13,10 +13,9 @@ const ITEMS = []
 // --- Component Cleanup ---: 1000x1000 init is ~400ms; 2000x2000 init is ~1.4s
 // Function Optimization (removing HOFs): 1000x1000 init added about ~40ms (???)
 // startTransition / useDeferredValue: 1000x1000 init ~280ms; 2000x2000 init ~1.17s; 3000x3000 init ~3.3s (scroll time is ~0.1ms)
-const GRID_SIZE = 100
+const GRID_SIZE = 1000
 for (let i = 0; i < GRID_SIZE; i++) {
   for (let j = 0; j < GRID_SIZE; j++) {
-    // @ts-expect-error - TODO need to fix
     ITEMS.push(`${j}-${i}`)
   }
 }

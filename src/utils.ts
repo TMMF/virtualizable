@@ -32,10 +32,8 @@ export const measure = <Result>(name: string, fn: () => Result): Result => {
   performance.mark(`${name}-end`)
 
   const { duration } = performance.measure(`${name}-measure`, { start: `${name}-start`, end: `${name}-end` })
-  performance.clearMarks()
-  performance.clearMeasures()
-
   console.debug(`${name}: ${duration}ms`)
+
   return result
 }
 
@@ -46,20 +44,18 @@ const getBucketKey = (x: number, y: number): types.BucketKey => `${x}-${y}`
 const calculateCanvasSize = <Key extends types.KeyBase, Item extends types.ItemBase>(
   items: types.Collection<Key, Item>,
   getBoundingBox: types.GetBoundingBox<Key, Item>
-): types.Size =>
-  Object.keys(items).reduce(
-    (acc, _key) => {
-      const key = _key as Key
+): types.Size => {
+  const size = { width: 0, height: 0 }
 
-      const item = items[key]
-      const box = getBoundingBox(item, key)
-      return {
-        width: Math.max(acc.width, box.x + box.width),
-        height: Math.max(acc.height, box.y + box.height),
-      }
-    },
-    { width: 0, height: 0 }
-  )
+  for (const key in items) {
+    const item = items[key]
+    const box = getBoundingBox(item, key)
+    size.width = Math.max(size.width, box.x + box.width)
+    size.height = Math.max(size.height, box.y + box.height)
+  }
+
+  return size
+}
 
 const calculateBuckets = <Key extends types.KeyBase, Item extends types.ItemBase>(
   items: types.Collection<Key, Item>,
@@ -67,9 +63,7 @@ const calculateBuckets = <Key extends types.KeyBase, Item extends types.ItemBase
 ) => {
   const buckets: Record<types.BucketKey, Key[]> = {}
 
-  Object.keys(items).forEach((_key) => {
-    const key = _key as Key
-
+  for (const key in items) {
     const item = items[key]
     const [x, y] = getBucket(item, key)
     const bucketKey = getBucketKey(x, y)
@@ -78,7 +72,7 @@ const calculateBuckets = <Key extends types.KeyBase, Item extends types.ItemBase
       buckets[bucketKey] = []
     }
     buckets[bucketKey].push(key)
-  })
+  }
 
   return buckets
 }
@@ -94,7 +88,7 @@ export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBas
   const { items, getBoundingBox, customGetBucket, precomputedCanvasSize, precomputedBucketSize, precomputedBuckets } =
     args
 
-  const size = precomputedCanvasSize ?? calculateCanvasSize(items, getBoundingBox)
+  const size = precomputedCanvasSize ?? measure('Size', () => calculateCanvasSize(items, getBoundingBox))
   // TODO: this methodology for bucketSize isn't great if there's clustering of items or if items are tightly packed
   // on a large viewport
   const bucketSize = precomputedBucketSize ?? Math.max(100, Math.min(size.width, size.height, 1000))
@@ -105,7 +99,7 @@ export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBas
       const box = getBoundingBox(item, key)
       return [Math.floor(box.x / bucketSize), Math.floor(box.y / bucketSize)]
     })
-  const buckets = precomputedBuckets ?? calculateBuckets(items, getBucket)
+  const buckets = precomputedBuckets ?? measure('Buckets', () => calculateBuckets(items, getBucket))
 
   return { size, bucketSize, buckets }
 }

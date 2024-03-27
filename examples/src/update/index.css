@@ -1,0 +1,18 @@
+.item {
+  background-color: red;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.item:focus-visible {
+  outline: 4px solid blue;
+}
+
+button {
+  margin-bottom: 10px;
+}

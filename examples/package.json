@@ -6,9 +6,13 @@
   "scripts": {
     "start:basic": "parcel src/basic/index.html --watch-dir ..",
     "start:update": "parcel src/update/index.html --watch-dir ..",
+    "start:webgl": "parcel src/webgl/index.html --watch-dir ..",
     "clean": "rm -rf dist/ && rm -rf .parcel-cache/"
   },
-  "dependencies": {},
+  "dependencies": {
+    "regl": "2.1.0",
+    "seedrandom": "3.0.5"
+  },
   "alias": {
     "react": "../node_modules/react",
     "react-dom": "../node_modules/react-dom",
