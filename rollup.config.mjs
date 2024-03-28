@@ -42,7 +42,7 @@ export default {
     }),
     commonjs(),
     json(),
-    typescript({ tsconfig: 'tsconfig.json' }),
+    typescript({ tsconfig: 'tsconfig.json', abortOnError: false }),
     babel({
       exclude: 'node_modules/**',
       babelHelpers: 'bundled',
