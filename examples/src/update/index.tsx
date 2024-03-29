@@ -2,34 +2,23 @@ import * as React from 'react'
 import * as ReactDOM from 'react-dom/client'
 import { Virtualizable } from '@virtualizable/react'
 
-const ITEMS: string[] = []
+const ITEMS: { id: string; x: number; y: number; width: number; height: number }[] = []
 const GRID_SIZE = 20
 const GRID_SIZE_SQ = GRID_SIZE * GRID_SIZE
 for (let i = 0; i < GRID_SIZE; i++) {
   for (let j = 0; j < GRID_SIZE; j++) {
-    ITEMS.push(`${j}-${i}`)
+    ITEMS.push({ id: `${j}-${i}`, x: i * 100, y: j * 100, width: 50, height: 50 })
   }
 }
 
-const getBoundingBox = (item, key) => {
-  const reset = key >= GRID_SIZE_SQ ? GRID_SIZE_SQ : 0
-  const offset = key >= GRID_SIZE_SQ ? 50 : 0
-
-  const i = (Number(key) - reset) % GRID_SIZE
-  const j = Math.floor((Number(key) - reset) / GRID_SIZE)
-
-  return {
-    x: i * 100 + offset,
-    y: j * 100 + offset,
-    width: 50,
-    height: 50,
-  }
+const getBoundingBox = (item) => {
+  return item
 }
 
 const renderItem = (item, key) => {
   return (
-    <div key={item} className="item" tabIndex={key + 1} autoFocus={key === 0}>
-      {item}
+    <div key={item.id} className="item" tabIndex={key + 1} autoFocus={key === 0}>
+      {item.id}
     </div>
   )
 }
@@ -37,15 +26,13 @@ const renderItem = (item, key) => {
 const App = () => {
   const [items, setItems] = React.useState(ITEMS)
   const addItem = React.useCallback(() => {
-    setItems((prev) => [...prev, `${prev.length}`])
-  }, [])
+    setItems((prevItems) => {
+      const count = prevItems.length - GRID_SIZE_SQ
+      const i = count % GRID_SIZE
+      const j = Math.floor(count / GRID_SIZE)
 
-  const shiftItems = React.useCallback(() => {
-    setItems((items) => {
-      const copiedItems = [...items]
-      const item = copiedItems.shift()
-      copiedItems.push(item!)
-      return copiedItems
+      const item = { id: `${prevItems.length}`, x: 50 + i * 100, y: 50 + j * 100, width: 50, height: 50 }
+      return [...prevItems, item]
     })
   }, [])
 
@@ -53,7 +40,6 @@ const App = () => {
     <>
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={addItem}>Add Item</button>
-        <button onClick={shiftItems}>Shift Items</button>
       </div>
       <div style={{ border: '1px solid green', width: '50vw', height: '50vh' }}>
         <Virtualizable items={items} getBoundingBox={getBoundingBox} renderItem={renderItem} />

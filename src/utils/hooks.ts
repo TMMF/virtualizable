@@ -5,7 +5,7 @@ export const useMountEffect = (fn: () => void): void => {
   React.useEffect(fn, [])
 }
 
-export const useMemoOnce = <Res>(fn: () => Res): Res => {
+/* export const useMemoOnce = <Res>(fn: () => Res): Res => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return React.useMemo(fn, [])
 }
@@ -28,4 +28,4 @@ export const useSyncRef = <T>(value: T): React.MutableRefObject<T> => {
   const ref = React.useRef(value)
   ref.current = value
   return ref
-}
+} */

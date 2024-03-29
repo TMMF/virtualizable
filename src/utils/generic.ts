@@ -37,3 +37,13 @@ export const areArraysEqual = <T>(a: T[], b: T[]) => {
 export const areKeysEqual = <Key extends types.KeyBase>(a: Key[], b: Key[]) => {
   return areSetsEqual(new Set(a), new Set(b))
 }
+
+export const diffSets = <T>(prev: Set<T>, next: Set<T>) => {
+  const added: T[] = []
+  const removed: T[] = []
+
+  next.forEach((item) => (!prev.has(item) ? added.push(item) : null))
+  prev.forEach((item) => (!next.has(item) ? removed.push(item) : null))
+
+  return { added, removed }
+}

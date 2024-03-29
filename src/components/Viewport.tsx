@@ -3,6 +3,9 @@ import { CanvasContext } from '../contexts'
 import * as types from '../types'
 import * as utils from '../utils'
 
+const DEFAULT_POSITION = { x: 0, y: 0 }
+const EMPTY_SIZE = { width: 0, height: 0 }
+
 type InnerComponentProps<K extends keyof JSX.IntrinsicElements> = types.InnerComponentProps<K> & {
   onScroll?: React.UIEventHandler<types.GetElementType<K>>
 }
@@ -57,50 +60,68 @@ const Viewport = <
   const Component = _as as unknown as React.ComponentType<InnerComponentProps<ElKey>>
   const onScroll = _onScroll as React.UIEventHandler<Element>
 
-  const {
-    size: _size,
-    bucketSize: _bucketSize,
-    buckets: _buckets,
-  } = utils.useMemoOnce(() =>
-    utils.measure('Preprocessing', () =>
-      utils.preprocess({
-        items,
-        getBoundingBox,
-        customGetBucket,
-        precomputedCanvasSize,
-        precomputedBucketSize,
-        precomputedBuckets,
-      })
-    )
+  // ---
+
+  const id = React.useId()
+  const domRef = React.useRef<Element>(null)
+  const lastScrollCoords = React.useRef<types.Position>(DEFAULT_POSITION)
+  const [visibleKeys, setVisibleKeys] = React.useState<Key[]>([])
+
+  const { size, bucketSize, buckets } = React.useMemo(
+    () =>
+      utils.measure('Processing', () =>
+        utils.process<Key, Item>({
+          id,
+          items,
+          getBoundingBox,
+          customGetBucket,
+          precomputedCanvasSize,
+          precomputedBucketSize,
+          precomputedBuckets,
+        })
+      ),
+    // We don't care about the fns changing
+    [id, items, precomputedBucketSize, precomputedBuckets, precomputedCanvasSize]
   )
 
-  // Always prioritized the precomputed values if available
-  const [size, setSize] = utils.usePropState(precomputedCanvasSize ?? _size)
-  const [bucketSize] = utils.usePropState(precomputedBucketSize ?? _bucketSize)
-  const [buckets, setBuckets] = utils.usePropState(precomputedBuckets ?? _buckets)
-
-  const domRef = React.useRef<Element>(null)
-  const lastScrollCoords = React.useRef<types.Position>({ x: 0, y: 0 })
-
-  const _cvk = (scroll: types.Position, _buckets = buckets) =>
-    utils.measure('Calculating Visible Keys', () =>
+  React.useLayoutEffect(() => {
+    const newVisibleKeys = utils.measure('Calculating Visible Keys', () =>
       utils.calculateVisibleKeys({
-        scroll,
+        scroll: lastScrollCoords.current,
         bucketSize,
-        buckets: _buckets,
+        buckets,
         getBoundingBox,
-        viewportSize: utils.unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? {
-          width: 0,
-          height: 0,
-        },
+        viewportSize: utils.unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? EMPTY_SIZE,
         items,
         overscan,
       })
     )
-  const cvkRef = utils.useSyncRef(_cvk)
-  const cvk = React.useCallback((scroll: types.Position) => cvkRef.current(scroll), [])
 
-  const [visibleKeys, setVisibleKeys] = React.useState<Key[]>([])
+    setVisibleKeys((prevVisibleKeys) =>
+      // Prevents unnecessary re-renders
+      utils.areKeysEqual(prevVisibleKeys, newVisibleKeys) ? prevVisibleKeys : newVisibleKeys
+    )
+    // We don't care about the fns changing
+  }, [bucketSize, buckets, items, overscan])
+
+  // ---
+
+  const cvk = React.useCallback(
+    (scroll: types.Position) =>
+      utils.measure('Calculating Visible Keys', () =>
+        utils.calculateVisibleKeys({
+          scroll,
+          bucketSize,
+          buckets,
+          getBoundingBox,
+          viewportSize: utils.unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? EMPTY_SIZE,
+          items,
+          overscan,
+        })
+      ),
+    [bucketSize, buckets, getBoundingBox, items, overscan]
+  )
+
   // Need to useMountEffect to set initial visible keys since it needs domRef.current to be set first
   utils.useMountEffect(() => setVisibleKeys(cvk(lastScrollCoords.current)))
 
@@ -126,26 +147,6 @@ const Viewport = <
     },
     [throttledScroll, onScroll]
   )
-
-  // Change in items, recomputation necessary for canvas
-  const prevItems = React.useRef(items)
-  if (prevItems.current !== items) {
-    prevItems.current = items
-
-    // TODO identify which items changed and recompute based on only those (diff change instead of full replacement)
-    const { size, buckets } = utils.preprocess({
-      items,
-      getBoundingBox,
-      customGetBucket,
-      precomputedCanvasSize,
-      precomputedBucketSize,
-      precomputedBuckets,
-    })
-
-    setBuckets(buckets)
-    setSize(size)
-    setVisibleKeys(_cvk(lastScrollCoords.current, buckets))
-  }
 
   const canvasContextValue = React.useMemo(() => {
     const visibleEntries = visibleKeys.map((key): [Key, Item] => [key, utils.getItem(items, key)])
