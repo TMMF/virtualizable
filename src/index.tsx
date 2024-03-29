@@ -1,8 +1,9 @@
+'use client'
+
 export { default as Virtualizable } from './components/Virtualizable'
 
 // TODO:
 // - Create imperative API
-// - Support resizing (https://developer.mozilla.org/en-US/docs/Web/API/Resize_Observer_API)
 // - Support intersection observer on items (for event handlers)
 // - Support infinite scrolling canvas + reverse scrolling
 // - Support streaming items (for infinite scrolling)

@@ -196,6 +196,17 @@ export const useVirtualizable = <
     [cvk, scrollThrottle]
   )
 
+  React.useEffect(() => {
+    const { x, y } = lastScrollCoords.current
+    const resizeObserver = new ResizeObserver(() =>
+      onScroll({ target: { scrollLeft: x, scrollTop: y } } as unknown as React.UIEvent<Element>)
+    )
+
+    const el = domRef.current
+    if (el) resizeObserver.observe(el as Element)
+    return () => resizeObserver.disconnect()
+  }, [onScroll])
+
   return {
     domRef,
     size,
