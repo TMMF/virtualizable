@@ -12,8 +12,8 @@ export type VirtualizableRef<
   Element extends types.SupportedElements[ElKey]
 > = Omit<ViewportRef<ElKey, Element>, 'getInnerRef'> &
   Omit<CanvasRef<ElKey, Element>, 'getInnerRef'> & {
-    getViewportRef: () => React.Ref<Element> | undefined
-    getCanvasRef: () => React.Ref<Element> | undefined
+    getViewportRef: ViewportRef<ElKey, Element>[`getInnerRef`]
+    getCanvasRef: CanvasRef<ElKey, Element>[`getInnerRef`]
   }
 
 export const Virtualizable = <Key extends types.KeyBase, Item extends types.ItemBase>(

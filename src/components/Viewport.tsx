@@ -26,7 +26,7 @@ export type ViewportProps<Key extends types.KeyBase, Item extends types.ItemBase
 }
 
 export type ViewportRef<ElKey extends types.SupportedElementKeys, Element extends types.SupportedElements[ElKey]> = {
-  getInnerRef: () => React.Ref<Element>
+  getInnerRef: () => React.Ref<Element> | undefined
 }
 
 const Viewport = <
@@ -49,7 +49,7 @@ const Viewport = <
     buckets: precomputedBuckets,
     overscan = 100,
     as: _as = 'div',
-    style,
+    style: _style,
     children,
     onScroll: _onScroll,
     ...rest
@@ -57,62 +57,63 @@ const Viewport = <
   const Component = _as as unknown as React.ComponentType<InnerComponentProps<ElKey>>
   const onScroll = _onScroll as React.UIEventHandler<Element>
 
-  const { size, bucketSize, buckets } = React.useMemo(
-    () =>
-      utils.measure('Preprocessing', () =>
-        utils.preprocess({
-          items,
-          getBoundingBox,
-          customGetBucket,
-          precomputedCanvasSize,
-          precomputedBucketSize,
-          precomputedBuckets,
-        })
-      ),
-    [customGetBucket, getBoundingBox, items, precomputedBucketSize, precomputedBuckets, precomputedCanvasSize]
+  const {
+    size: _size,
+    bucketSize: _bucketSize,
+    buckets: _buckets,
+  } = utils.useMemoOnce(() =>
+    utils.measure('Preprocessing', () =>
+      utils.preprocess({
+        items,
+        getBoundingBox,
+        customGetBucket,
+        precomputedCanvasSize,
+        precomputedBucketSize,
+        precomputedBuckets,
+      })
+    )
   )
+
+  // Always prioritized the precomputed values if available
+  const [size, setSize] = utils.usePropState(precomputedCanvasSize ?? _size)
+  const [bucketSize] = utils.usePropState(precomputedBucketSize ?? _bucketSize)
+  const [buckets, setBuckets] = utils.usePropState(precomputedBuckets ?? _buckets)
 
   const domRef = React.useRef<Element>(null)
-  const cvk = React.useCallback(
-    (scroll: types.Position) =>
-      utils.measure('Calculating Visible Keys', () =>
-        utils.calculateVisibleKeys({
-          scroll,
-          bucketSize,
-          buckets,
-          getBoundingBox,
-          viewportSize: utils.unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? {
-            width: 0,
-            height: 0,
-          },
-          items,
-          overscan,
-        })
-      ),
-    [bucketSize, buckets, getBoundingBox, items, overscan]
-  )
+  const lastScrollCoords = React.useRef<types.Position>({ x: 0, y: 0 })
 
-  const [, startTransition] = React.useTransition()
+  const _cvk = (scroll: types.Position, _buckets = buckets) =>
+    utils.measure('Calculating Visible Keys', () =>
+      utils.calculateVisibleKeys({
+        scroll,
+        bucketSize,
+        buckets: _buckets,
+        getBoundingBox,
+        viewportSize: utils.unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? {
+          width: 0,
+          height: 0,
+        },
+        items,
+        overscan,
+      })
+    )
+  const cvkRef = utils.useSyncRef(_cvk)
+  const cvk = React.useCallback((scroll: types.Position) => cvkRef.current(scroll), [])
+
   const [visibleKeys, setVisibleKeys] = React.useState<Key[]>([])
   // Need to useMountEffect to set initial visible keys since it needs domRef.current to be set first
-  utils.useMountEffect(() => setVisibleKeys(cvk({ x: 0, y: 0 })))
-
-  const visibleEntries = React.useMemo(
-    () => visibleKeys.map((key): [Key, Item] => [key, items[key]]),
-    [items, visibleKeys]
-  )
+  utils.useMountEffect(() => setVisibleKeys(cvk(lastScrollCoords.current)))
 
   const throttledScroll = React.useMemo(
     () =>
       utils.throttle((event: React.UIEvent<Element>) => {
         const target = utils.unsafeHtmlDivElementTypeCoercion(event.target)
-        const newVisibleKeys = cvk({ x: target.scrollLeft, y: target.scrollTop })
+        lastScrollCoords.current = { x: target.scrollLeft, y: target.scrollTop }
+        const newVisibleKeys = cvk(lastScrollCoords.current)
 
-        startTransition(() =>
-          setVisibleKeys((prevVisibleKeys) =>
-            // Prevents unnecessary re-renders
-            utils.areKeysEqual(prevVisibleKeys, newVisibleKeys) ? prevVisibleKeys : newVisibleKeys
-          )
+        setVisibleKeys((prevVisibleKeys) =>
+          // Prevents unnecessary re-renders
+          utils.areKeysEqual(prevVisibleKeys, newVisibleKeys) ? prevVisibleKeys : newVisibleKeys
         )
       }, scrollThrottle),
     [cvk, scrollThrottle]
@@ -126,9 +127,34 @@ const Viewport = <
     [throttledScroll, onScroll]
   )
 
-  const canvasContextValue = React.useMemo(
-    () => ({ size, visibleEntries, getBoundingBox }),
-    [size, visibleEntries, getBoundingBox]
+  // Change in items, recomputation necessary for canvas
+  const prevItems = React.useRef(items)
+  if (prevItems.current !== items) {
+    prevItems.current = items
+
+    // TODO identify which items changed and recompute based on only those (diff change instead of full replacement)
+    const { size, buckets } = utils.preprocess({
+      items,
+      getBoundingBox,
+      customGetBucket,
+      precomputedCanvasSize,
+      precomputedBucketSize,
+      precomputedBuckets,
+    })
+
+    setBuckets(buckets)
+    setSize(size)
+    setVisibleKeys(_cvk(lastScrollCoords.current, buckets))
+  }
+
+  const canvasContextValue = React.useMemo(() => {
+    const visibleEntries = visibleKeys.map((key): [Key, Item] => [key, utils.getItem(items, key)])
+    return { size, visibleEntries, getBoundingBox }
+  }, [items, size, visibleKeys, getBoundingBox])
+
+  const style = React.useMemo(
+    () => ({ overflow: 'auto', border: '1px solid blue', width: '100%', height: '100%', ..._style }),
+    [_style]
   )
 
   React.useImperativeHandle(
@@ -148,20 +174,16 @@ const Viewport = <
     []
   )
 
+  // TODO: remove and place in debug/perf utils
   console.debug(
     '# Visible Items:',
     visibleKeys.length,
     '| Item IDs:',
-    visibleKeys.map((key) => items[key])
+    visibleKeys.map((key) => utils.getItem(items, key))
   )
 
   return (
-    <Component
-      {...rest}
-      ref={domRef}
-      onScroll={handleScroll}
-      style={{ overflow: 'auto', border: '1px solid blue', width: '100%', height: '100%', ...style }}
-    >
+    <Component {...rest} ref={domRef} onScroll={handleScroll} style={style}>
       {/* @ts-expect-error - Item != Item; gotta fix the types */}
       <CanvasContext.Provider value={canvasContextValue}>{children}</CanvasContext.Provider>
     </Component>

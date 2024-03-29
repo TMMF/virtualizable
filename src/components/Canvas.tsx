@@ -10,8 +10,9 @@ const ItemProvider = React.memo(function ItemProvider(props: {
   renderItem: types.RenderItem<types.KeyBase, types.ItemBase>
 }) {
   const { item, k: key, getBoundingBox, renderItem } = props
-  const box = getBoundingBox(item, key)
-  return <ItemContext.Provider value={{ box }}>{renderItem(item, key)}</ItemContext.Provider>
+  const itemContextValue = React.useMemo(() => ({ box: getBoundingBox(item, key) }), [item, key, getBoundingBox])
+
+  return <ItemContext.Provider value={itemContextValue}>{renderItem(item, key)}</ItemContext.Provider>
 })
 
 // ---
@@ -21,7 +22,7 @@ export type CanvasProps<Key extends types.KeyBase, Item extends types.ItemBase> 
 }
 
 export type CanvasRef<ElKey extends types.SupportedElementKeys, Element extends types.SupportedElements[ElKey]> = {
-  getInnerRef: () => React.Ref<Element>
+  getInnerRef: () => React.Ref<Element> | undefined
 }
 
 export const Canvas = <

@@ -2,6 +2,11 @@ import * as types from '../types'
 import { measure } from './perf'
 
 const getBucketKey = (x: number, y: number): types.BucketKey => `${x}-${y}`
+export const getItem = <Key extends types.KeyBase, Item extends types.ItemBase>(
+  items: types.Collection<Key, Item>,
+  key: Key
+  // @ts-expect-error - TS doesn't think Key is a key of items
+) => items[key]
 
 const calculateCanvasSize = <Key extends types.KeyBase, Item extends types.ItemBase>(
   items: types.Collection<Key, Item>,
@@ -9,8 +14,9 @@ const calculateCanvasSize = <Key extends types.KeyBase, Item extends types.ItemB
 ): types.Size => {
   const size = { width: 0, height: 0 }
 
-  for (const key in items) {
-    const item = items[key]
+  for (const _key in items) {
+    const key = _key as Key
+    const item = getItem(items, key)
     const box = getBoundingBox(item, key)
     size.width = Math.max(size.width, box.x + box.width)
     size.height = Math.max(size.height, box.y + box.height)
@@ -25,8 +31,9 @@ const calculateBuckets = <Key extends types.KeyBase, Item extends types.ItemBase
 ) => {
   const buckets: Record<types.BucketKey, Key[]> = {}
 
-  for (const key in items) {
-    const item = items[key]
+  for (const _key in items) {
+    const key = _key as Key
+    const item = getItem(items, key)
     const [x, y] = getBucket(item, key)
     const bucketKey = getBucketKey(x, y)
 
@@ -39,14 +46,16 @@ const calculateBuckets = <Key extends types.KeyBase, Item extends types.ItemBase
   return buckets
 }
 
-export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBase>(args: {
+type ProcessingArgs<Key extends types.KeyBase, Item extends types.ItemBase> = {
   items: types.Collection<Key, Item>
   getBoundingBox: types.GetBoundingBox<Key, Item>
   customGetBucket?: types.GetBucket<Key, Item>
   precomputedCanvasSize?: types.Size
   precomputedBucketSize?: types.PositiveNumber
   precomputedBuckets?: types.Buckets<Key>
-}) => {
+}
+
+export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBase>(args: ProcessingArgs<Key, Item>) => {
   const { items, getBoundingBox, customGetBucket, precomputedCanvasSize, precomputedBucketSize, precomputedBuckets } =
     args
 
@@ -65,6 +74,19 @@ export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBas
 
   return { size, bucketSize, buckets }
 }
+
+export const diff = <Key extends types.KeyBase, Item extends types.ItemBase>(args: ProcessingArgs<Key, Item>) => {
+  /*const { items, getBoundingBox, customGetBucket, precomputedCanvasSize, precomputedBucketSize, precomputedBuckets } =
+    args
+
+  return {
+    canvasSize,
+    bucketSize,
+    buckets,
+  }*/
+}
+
+// TODO: merge 'preprocess' and 'diff' into a single hook/fn; this will hold core virtualization logic and support headless UI
 
 type vkArgs<Key extends types.KeyBase, Item extends types.ItemBase> = {
   scroll: types.Position
@@ -99,7 +121,7 @@ export const calculateVisibleKeys = <Key extends types.KeyBase, Item extends typ
       const bucketKey = getBucketKey(x, y)
       const bucket = buckets[bucketKey] ?? []
       bucket.forEach((key) => {
-        const item = items[key]
+        const item = getItem(items, key)
         const box = getBoundingBox(item, key)
 
         if (

@@ -40,9 +40,21 @@ const App = () => {
     setItems((prev) => [...prev, `${prev.length}`])
   }, [])
 
+  const shiftItems = React.useCallback(() => {
+    setItems((items) => {
+      const copiedItems = [...items]
+      const item = copiedItems.shift()
+      copiedItems.push(item!)
+      return copiedItems
+    })
+  }, [])
+
   return (
     <>
-      <button onClick={addItem}>Add Item</button>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={addItem}>Add Item</button>
+        <button onClick={shiftItems}>Shift Items</button>
+      </div>
       <div style={{ border: '1px solid green', width: '50vw', height: '50vh' }}>
         <Virtualizable items={items} getBoundingBox={getBoundingBox} renderItem={renderItem} />
       </div>

@@ -3,7 +3,7 @@ import { ItemContext } from '../contexts'
 import * as types from '../types'
 
 export type ItemRef<ElKey extends types.SupportedElementKeys, Element extends types.SupportedElements[ElKey]> = {
-  getInnerRef: () => React.Ref<Element>
+  getInnerRef: () => React.Ref<Element> | undefined
 }
 
 export const Item = <ElKey extends types.SupportedElementKeys, Element extends types.SupportedElements[ElKey]>(
