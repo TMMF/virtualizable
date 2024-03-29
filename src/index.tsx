@@ -1,7 +1,6 @@
 export { default as Virtualizable } from './components/Virtualizable'
 
 // TODO:
-// - Support updating items / item positions + sizes
 // - Create imperative API
 // - Support resizing (https://developer.mozilla.org/en-US/docs/Web/API/Resize_Observer_API)
 // - Support intersection observer on items (for event handlers)

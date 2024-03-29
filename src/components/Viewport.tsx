@@ -3,24 +3,14 @@ import { CanvasContext } from '../contexts'
 import * as types from '../types'
 import * as utils from '../utils'
 
-const DEFAULT_POSITION = { x: 0, y: 0 }
-const EMPTY_SIZE = { width: 0, height: 0 }
-
 type InnerComponentProps<K extends keyof JSX.IntrinsicElements> = types.InnerComponentProps<K> & {
   onScroll?: React.UIEventHandler<types.GetElementType<K>>
 }
 
-export type ViewportProps<Key extends types.KeyBase, Item extends types.ItemBase> = {
-  items: types.Collection<Key, Item>
-  getBoundingBox: types.GetBoundingBox<Key, Item> // Q: should this handle % based positioning?
-  // --- Performance Optimizations ---
-  bucketSize?: types.PositiveNumber // Defaults to the smaller of the two dimensions (width or height); MAXING OUT AT 500x500
-  getBucket?: types.GetBucket<Key, Item> // Preprocessing makes this faster, but component will handle it if not provided (rets [x, y])
-  buckets?: types.Buckets<Key> // Preprocessing makes this faster, but component will handle it if not provided
-  canvasSize?: types.Size // Precomputed size (if available)
-  overscan?: types.PositiveNumber // Defaults to 100px
-  scrollThrottle?: types.Milliseconds // Defaults to 100ms
-  // --- Event Handlers ---
+export type ViewportProps<Key extends types.KeyBase, Item extends types.ItemBase> = utils.UseVirtualizableArgs<
+  Key,
+  Item
+> & {
   //onCanvasSizeChange?: // size change
   //onBucketsChange?: // buckets change
   //onPreprocessed?: // Preprocessed data (when it finishes; indicative of when the component is ready to render)
@@ -45,12 +35,11 @@ const Viewport = <
   const {
     items,
     getBoundingBox,
-    scrollThrottle = 50,
-    getBucket: customGetBucket,
-    canvasSize: precomputedCanvasSize,
-    bucketSize: precomputedBucketSize,
-    buckets: precomputedBuckets,
-    overscan = 100,
+    overscan,
+    scrollThrottle,
+    precomputedCanvasSize,
+    precomputedBucketSize,
+    precomputedBuckets,
     as: _as = 'div',
     style: _style,
     children,
@@ -60,93 +49,22 @@ const Viewport = <
   const Component = _as as unknown as React.ComponentType<InnerComponentProps<ElKey>>
   const onScroll = _onScroll as React.UIEventHandler<Element>
 
-  // ---
+  const {
+    domRef,
+    size,
+    visibleKeys,
+    onScroll: throttledScroll,
+  } = utils.useVirtualizable<Key, Item, ElKey, Element>({
+    items,
+    getBoundingBox,
+    precomputedCanvasSize,
+    precomputedBucketSize,
+    precomputedBuckets,
+    overscan,
+    scrollThrottle,
+  })
 
-  const id = React.useId()
-  const domRef = React.useRef<Element>(null)
-  const lastScrollCoords = React.useRef<types.Position>(DEFAULT_POSITION)
-  const [visibleKeys, setVisibleKeys] = React.useState<Key[]>([])
-
-  const { size, bucketSize, buckets } = React.useMemo(
-    () =>
-      utils.measure('Processing', () =>
-        utils.process<Key, Item>({
-          id,
-          items,
-          getBoundingBox,
-          customGetBucket,
-          precomputedCanvasSize,
-          precomputedBucketSize,
-          precomputedBuckets,
-        })
-      ),
-    // We don't care about the fns changing
-    [id, items, precomputedBucketSize, precomputedBuckets, precomputedCanvasSize]
-  )
-
-  React.useLayoutEffect(() => {
-    const newVisibleKeys = utils.measure('Calculating Visible Keys', () =>
-      utils.calculateVisibleKeys({
-        scroll: lastScrollCoords.current,
-        bucketSize,
-        buckets,
-        getBoundingBox,
-        viewportSize: utils.unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? EMPTY_SIZE,
-        items,
-        overscan,
-      })
-    )
-
-    setVisibleKeys((prevVisibleKeys) =>
-      // Prevents unnecessary re-renders
-      utils.areKeysEqual(prevVisibleKeys, newVisibleKeys) ? prevVisibleKeys : newVisibleKeys
-    )
-    // We don't care about the fns changing
-  }, [bucketSize, buckets, items, overscan])
-
-  // ---
-
-  const cvk = React.useCallback(
-    (scroll: types.Position) =>
-      utils.measure('Calculating Visible Keys', () =>
-        utils.calculateVisibleKeys({
-          scroll,
-          bucketSize,
-          buckets,
-          getBoundingBox,
-          viewportSize: utils.unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? EMPTY_SIZE,
-          items,
-          overscan,
-        })
-      ),
-    [bucketSize, buckets, getBoundingBox, items, overscan]
-  )
-
-  // Need to useMountEffect to set initial visible keys since it needs domRef.current to be set first
-  utils.useMountEffect(() => setVisibleKeys(cvk(lastScrollCoords.current)))
-
-  const throttledScroll = React.useMemo(
-    () =>
-      utils.throttle((event: React.UIEvent<Element>) => {
-        const target = utils.unsafeHtmlDivElementTypeCoercion(event.target)
-        lastScrollCoords.current = { x: target.scrollLeft, y: target.scrollTop }
-        const newVisibleKeys = cvk(lastScrollCoords.current)
-
-        setVisibleKeys((prevVisibleKeys) =>
-          // Prevents unnecessary re-renders
-          utils.areKeysEqual(prevVisibleKeys, newVisibleKeys) ? prevVisibleKeys : newVisibleKeys
-        )
-      }, scrollThrottle),
-    [cvk, scrollThrottle]
-  )
-
-  const handleScroll = React.useCallback(
-    (event: React.UIEvent<Element>) => {
-      throttledScroll(event)
-      onScroll?.(event)
-    },
-    [throttledScroll, onScroll]
-  )
+  const handleScroll = utils.useMergeFns<[React.UIEvent<Element>]>(onScroll, throttledScroll)
 
   const canvasContextValue = React.useMemo(() => {
     const visibleEntries = visibleKeys.map((key): [Key, Item] => [key, utils.getItem(items, key)])

@@ -1,5 +1,5 @@
 import * as types from '../types'
-import * as utils from '../utils'
+import { diffSets } from './generic'
 import { measure } from './perf'
 
 const getBucketKey = (x: number, y: number): types.BucketKey => `${x}-${y}`
@@ -51,7 +51,6 @@ type ProcessingArgs<Key extends types.KeyBase, Item extends types.ItemBase> = {
   id: string
   items: types.Collection<Key, Item>
   getBoundingBox: types.GetBoundingBox<Key, Item>
-  customGetBucket?: types.GetBucket<Key, Item>
   precomputedCanvasSize?: types.Size
   precomputedBucketSize?: types.PositiveNumber
   precomputedBuckets?: types.Buckets<Key>
@@ -79,47 +78,34 @@ const getBucketFactory =
     return [Math.floor(box.x / bucketSize), Math.floor(box.y / bucketSize)]
   }
 
-export const preprocess = <Key extends types.KeyBase, Item extends types.ItemBase>(args: ProcessingArgs<Key, Item>) => {
-  const {
-    id,
-    items,
-    getBoundingBox,
-    customGetBucket,
-    precomputedCanvasSize,
-    precomputedBucketSize,
-    precomputedBuckets,
-  } = args
-
-  const size = precomputedCanvasSize ?? measure('Size', () => calculateCanvasSize(items, getBoundingBox))
-  // TODO: this methodology for bucketSize isn't great if there's clustering of items or if items are tightly packed
-  // on a large viewport
-  const bucketSize = precomputedBucketSize ?? Math.max(100, Math.min(size.width, size.height, 1000))
-  const getBucket = customGetBucket ?? getBucketFactory(getBoundingBox, bucketSize)
-  const buckets = precomputedBuckets ?? measure('Buckets', () => calculateBuckets(items, getBucket))
-
-  prevData[id] = { items, size, bucketSize, buckets }
-  return { size, bucketSize, buckets }
-}
-
 export const process = <Key extends types.KeyBase, Item extends types.ItemBase>(args: ProcessingArgs<Key, Item>) => {
-  const { items, getBoundingBox, customGetBucket, precomputedCanvasSize, precomputedBucketSize, precomputedBuckets } =
-    args
+  const { id, items, getBoundingBox, precomputedCanvasSize, precomputedBucketSize, precomputedBuckets } = args
 
   // --- No previous data; preprocess ---
-  const prev = prevData[args.id]
-  if (!prev) return preprocess(args)
+  const prev = prevData[id]
+  if (!prev) {
+    const size = precomputedCanvasSize ?? measure('Size', () => calculateCanvasSize(items, getBoundingBox))
+    // TODO: this methodology for bucketSize isn't great if there's clustering of items or if items are tightly packed
+    // on a large viewport
+    const bucketSize = precomputedBucketSize ?? Math.max(100, Math.min(size.width, size.height, 1000))
+    const getBucket = getBucketFactory(getBoundingBox, bucketSize)
+    const buckets = precomputedBuckets ?? measure('Buckets', () => calculateBuckets(items, getBucket))
+
+    prevData[id] = { items, size, bucketSize, buckets }
+    return { size, bucketSize, buckets }
+  }
 
   // --- Previous data exists; diff changes ---
   if (items !== prev.items) {
     // TODO: this is a naive implementation; we should be able to diff the items and update the size accordingly
     const size = precomputedCanvasSize ?? measure('Size', () => calculateCanvasSize(items, getBoundingBox))
     const bucketSize = precomputedBucketSize ?? Math.max(100, Math.min(size.width, size.height, 1000))
-    const getBucket = customGetBucket ?? getBucketFactory(getBoundingBox, bucketSize)
+    const getBucket = getBucketFactory(getBoundingBox, bucketSize)
 
     // Figure out diff'd items
     const prevItemsSet = new Set(Object.values(prev.items)) as Set<Item>
     const newItemsSet = new Set(Object.values(items)) as Set<Item>
-    const { added, removed } = utils.diffSets(prevItemsSet, newItemsSet)
+    const { added, removed } = diffSets(prevItemsSet, newItemsSet)
 
     const buckets =
       precomputedBuckets ??
@@ -128,7 +114,7 @@ export const process = <Key extends types.KeyBase, Item extends types.ItemBase>(
         const newBuckets = { ...prev.buckets } as types.Buckets<Key>
 
         added.forEach((item) => {
-          const key = Object.keys(items).find((k) => utils.getItem(items, k as Key) === item) as Key
+          const key = Object.keys(items).find((k) => getItem(items, k as Key) === item) as Key
           const [x, y] = getBucket(item, key)
           const bucketKey = getBucketKey(x, y)
 
@@ -139,7 +125,7 @@ export const process = <Key extends types.KeyBase, Item extends types.ItemBase>(
         })
 
         removed.map((item) => {
-          const key = Object.keys(prev.items).find((k) => utils.getItem(prev.items, k as Key) === item) as Key
+          const key = Object.keys(prev.items).find((k) => getItem(prev.items, k as Key) === item) as Key
           const [x, y] = getBucket(item, key)
           const bucketKey = getBucketKey(x, y)
 
@@ -150,11 +136,12 @@ export const process = <Key extends types.KeyBase, Item extends types.ItemBase>(
         return newBuckets
       })
 
-    prevData[args.id] = { items, size, bucketSize, buckets }
+    prevData[id] = { items, size, bucketSize, buckets }
     return { size, bucketSize, buckets }
   }
 
   const size = precomputedCanvasSize ?? prev.size
+  // TODO: when bucketSize changes, we need to recalculate the buckets
   const bucketSize = precomputedBucketSize ?? prev.bucketSize
   const buckets = precomputedBuckets ?? (prev.buckets as types.Buckets<Key>)
 
@@ -164,8 +151,6 @@ export const process = <Key extends types.KeyBase, Item extends types.ItemBase>(
     buckets,
   }
 }
-
-// TODO: merge 'preprocess' and 'diff' into a single 'process' hook/fn; this will hold core virtualization logic and support headless UI
 
 type vkArgs<Key extends types.KeyBase, Item extends types.ItemBase> = {
   scroll: types.Position
@@ -182,7 +167,6 @@ export const calculateVisibleKeys = <Key extends types.KeyBase, Item extends typ
 ) => {
   const { scroll, bucketSize, buckets, getBoundingBox, viewportSize, items, overscan = 0 } = args
 
-  // TODO: this logic doesn't necessarily work with a customGetBucket fn
   const bucketMinX = Math.floor((scroll.x - overscan) / bucketSize)
   const bucketMinY = Math.floor((scroll.y - overscan) / bucketSize)
   const bucketMaxX = Math.floor((scroll.x + viewportSize.width + overscan) / bucketSize)

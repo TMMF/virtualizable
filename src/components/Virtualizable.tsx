@@ -29,6 +29,7 @@ export const Virtualizable = <Key extends types.KeyBase, Item extends types.Item
     () => ({
       getViewportRef: () => viewportRef.current?.getInnerRef(),
       getCanvasRef: () => canvasRef.current?.getInnerRef(),
+      // TODO: more methods
     }),
     []
   )
