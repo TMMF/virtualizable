@@ -42,7 +42,19 @@ const App = () => {
         <button onClick={addItem}>Add Item</button>
       </div>
       <div style={{ border: '1px solid green', width: '50vw', height: '50vh' }}>
-        <Virtualizable items={items} getBoundingBox={getBoundingBox} renderItem={renderItem} />
+        <Virtualizable
+          items={items}
+          getBoundingBox={getBoundingBox}
+          renderItem={renderItem}
+          onVisible={(keysVisible) =>
+            console.log(
+              'VISIBLE KEYS',
+              Object.entries(keysVisible)
+                .filter(([_, visible]) => visible)
+                .map(([key]) => key)
+            )
+          }
+        />
       </div>
     </>
   )

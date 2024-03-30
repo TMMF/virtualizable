@@ -197,12 +197,21 @@ export const useVirtualizable = <
   )
 
   React.useEffect(() => {
+    const el = domRef.current
+    if (!el) return
+
+    if (!window.ResizeObserver) {
+      const _el = unsafeHtmlDivElementTypeCoercion(el)
+      const cb = (e: UIEvent) => onScroll(e as unknown as React.UIEvent<Element>)
+      _el.addEventListener('resize', cb)
+      return _el.removeEventListener('resize', cb)
+    }
+
     const { x, y } = lastScrollCoords.current
     const resizeObserver = new ResizeObserver(() =>
       onScroll({ target: { scrollLeft: x, scrollTop: y } } as unknown as React.UIEvent<Element>)
     )
 
-    const el = domRef.current
     if (el) resizeObserver.observe(el as Element)
     return () => resizeObserver.disconnect()
   }, [onScroll])

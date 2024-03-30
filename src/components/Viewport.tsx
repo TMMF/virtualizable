@@ -72,7 +72,7 @@ const Viewport = <
   }, [items, size, visibleKeys, getBoundingBox])
 
   const style = React.useMemo(
-    () => ({ overflow: 'auto', border: '1px solid blue', width: '100%', height: '100%', ..._style }),
+    () => ({ overflow: 'auto', border: '1px solid blue', maxHeight: '100%', ..._style }),
     [_style]
   )
 
@@ -94,12 +94,12 @@ const Viewport = <
   )
 
   // TODO: remove and place in debug/perf utils
-  console.debug(
+  /* console.debug(
     '# Visible Items:',
     visibleKeys.length,
     '| Item IDs:',
     visibleKeys.map((key) => utils.getItem(items, key))
-  )
+  ) */
 
   return (
     <Component {...rest} ref={domRef} onScroll={handleScroll} style={style}>

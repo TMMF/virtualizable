@@ -1,11 +1,14 @@
 import * as React from 'react'
 import * as types from '../types'
+import * as utils from '../utils'
 import Viewport, { ViewportProps, ViewportRef } from './Viewport'
 import Canvas, { CanvasProps, CanvasRef } from './Canvas'
 import Item from './Item'
 
 export type VirtualizableProps<Key extends types.KeyBase, Item extends types.ItemBase> = ViewportProps<Key, Item> &
-  CanvasProps<Key, Item>
+  CanvasProps<Key, Item> & {
+    onVisible?: (keysVisible: Record<Key, boolean>) => void
+  }
 
 export type VirtualizableRef<
   ElKey extends types.SupportedElementKeys,
@@ -20,10 +23,23 @@ export const Virtualizable = <Key extends types.KeyBase, Item extends types.Item
   props: VirtualizableProps<Key, Item> & { children?: React.ReactNode },
   ref: React.Ref<VirtualizableRef<'div', HTMLDivElement>>
 ) => {
-  const { renderItem, children, ...viewportProps } = props
+  const { renderItem, onVisible, children, ...viewportProps } = props
 
+  const visibleItemsRef = React.useRef<Record<Key, boolean>>({} as Record<Key, boolean>)
   const viewportRef = React.useRef<ViewportRef<'div', HTMLDivElement>>(null)
   const canvasRef = React.useRef<CanvasRef<'div', HTMLDivElement>>(null)
+
+  // throttle onVisible by a little bit to allow for multiple items to be visible at once
+  const _onVisible = React.useMemo(() => (onVisible ? utils.throttle(onVisible, 10) : undefined), [onVisible])
+  const onVisibleFactory = (key: Key) => {
+    if (!_onVisible) return undefined
+
+    return (visible: boolean) => {
+      visibleItemsRef.current[key] = visible
+      _onVisible(visibleItemsRef.current)
+    }
+  }
+
   React.useImperativeHandle(
     ref,
     () => ({
@@ -37,8 +53,11 @@ export const Virtualizable = <Key extends types.KeyBase, Item extends types.Item
   return (
     // @ts-expect-error - viewport props not including 'as'
     <Viewport {...viewportProps} ref={viewportRef}>
-      {/* @ts-expect-error - Item != Item; gotta fix the types */}
-      <Canvas ref={canvasRef} renderItem={(item: Item, key: Key) => <Item>{renderItem(item, key)}</Item>}>
+      <Canvas
+        ref={canvasRef}
+        // @ts-expect-error - Item != Item; gotta fix the types
+        renderItem={(item: Item, key: Key) => <Item onVisible={onVisibleFactory(key)}>{renderItem(item, key)}</Item>}
+      >
         {children}
       </Canvas>
     </Viewport>
