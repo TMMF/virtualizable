@@ -46,14 +46,7 @@ const App = () => {
           items={items}
           getBoundingBox={getBoundingBox}
           renderItem={renderItem}
-          onVisible={(keysVisible) =>
-            console.log(
-              'VISIBLE KEYS',
-              Object.entries(keysVisible)
-                .filter(([_, visible]) => visible)
-                .map(([key]) => key)
-            )
-          }
+          //onVisible={(keysVisible) => console.log('VISIBLE KEYS', Object.keys(keysVisible))}
         />
       </div>
     </>

@@ -257,9 +257,10 @@ export const virtualizable = <Key extends types.KeyBase, Item extends types.Item
     listeners.forEach((listener) => listener())
   }
 
-  let DATA = {
+  let visibleKeys: Key[] = []
+  let OUTPUT = {
     canvasSize: processed.size,
-    visibleKeys: [] as Key[],
+    visibleKeys,
   }
 
   // TODO: figure out ideal API that works well with React
@@ -271,44 +272,41 @@ export const virtualizable = <Key extends types.KeyBase, Item extends types.Item
         listeners.splice(listeners.indexOf(listener), 1)
       }
     },
-    get: () => DATA,
+    get: () => OUTPUT,
     set: (updateArgs: Partial<VirtualizableArgs<Key, Item>>) => {
-      const newInternalData = { ...internalData, ...updateArgs }
+      const oldInternalData = internalData
+      internalData = { ...internalData, ...updateArgs }
 
-      let newProcessed = processed
+      const oldProcessed = processed
       if (
-        newInternalData.items !== internalData.items ||
-        newInternalData.getBoundingBox !== internalData.getBoundingBox ||
-        newInternalData.precomputedBucketSize !== internalData.precomputedBucketSize ||
-        newInternalData.precomputedBuckets !== internalData.precomputedBuckets ||
-        newInternalData.precomputedCanvasSize !== internalData.precomputedCanvasSize
+        oldInternalData.items !== internalData.items ||
+        oldInternalData.getBoundingBox !== internalData.getBoundingBox ||
+        oldInternalData.precomputedBucketSize !== internalData.precomputedBucketSize ||
+        oldInternalData.precomputedBuckets !== internalData.precomputedBuckets ||
+        oldInternalData.precomputedCanvasSize !== internalData.precomputedCanvasSize
       ) {
-        newProcessed = _process()
+        processed = _process()
       }
 
-      let newVisibleKeys = DATA.visibleKeys
+      const oldVisibleKeys = visibleKeys
       if (
-        newInternalData.scrollPosition !== internalData.scrollPosition ||
-        newInternalData.getBoundingBox !== internalData.getBoundingBox ||
-        newInternalData.viewportSize !== internalData.viewportSize ||
-        newInternalData.items !== internalData.items ||
-        newInternalData.overscan !== internalData.overscan ||
-        newProcessed !== processed
+        oldInternalData.scrollPosition !== internalData.scrollPosition ||
+        oldInternalData.getBoundingBox !== internalData.getBoundingBox ||
+        oldInternalData.viewportSize !== internalData.viewportSize ||
+        oldInternalData.items !== internalData.items ||
+        oldInternalData.overscan !== internalData.overscan ||
+        oldProcessed !== processed
       ) {
-        newVisibleKeys = _calculateKeys()
+        visibleKeys = _calculateKeys()
       }
 
-      if (processed === newProcessed && DATA.visibleKeys === newVisibleKeys) return
+      if (processed === oldProcessed && visibleKeys === oldVisibleKeys) return
 
-      const changed = !areKeysEqual(DATA.visibleKeys, newVisibleKeys) || !isSizeEqual(processed.size, newProcessed.size)
-      internalData = newInternalData
-      processed = newProcessed
-      DATA.visibleKeys = newVisibleKeys
-
+      const changed = !areKeysEqual(visibleKeys, oldVisibleKeys) || !isSizeEqual(processed.size, oldProcessed.size)
       if (changed) {
-        DATA = {
-          canvasSize: newProcessed.size,
-          visibleKeys: newVisibleKeys,
+        OUTPUT = {
+          canvasSize: processed.size,
+          visibleKeys,
         }
 
         emitListeners()

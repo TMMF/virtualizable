@@ -24,6 +24,15 @@ export const throttle = <Args extends unknown[]>(fn: (...args: Args) => unknown,
   }
 }
 
+export const debounce = <Args extends unknown[]>(fn: (...args: Args) => unknown, wait: types.Milliseconds) => {
+  let timeout: ReturnType<typeof setTimeout> | undefined = undefined
+
+  return (...args: Args): void => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => fn(...args), wait)
+  }
+}
+
 export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) => {
   if (a.size !== b.size) return false
   return [...a].every((item) => b.has(item))

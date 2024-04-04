@@ -94,7 +94,7 @@ const Viewport = <
   )
 
   // TODO: remove and place in debug/perf utils
-  /* console.debug(
+  /* console.log(
     '# Visible Items:',
     visibleKeys.length,
     '| Item IDs:',

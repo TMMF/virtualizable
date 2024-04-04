@@ -15,6 +15,7 @@ export { default as Virtualizable } from './components/Virtualizable'
 //   - Runtime Prop Assertions
 //   - Tree-shaking components
 //   - Grid/Masonry/List layout components with custom perf parameters
+//   - Predictive scrolling (adjust overscan based on scroll velocity)
 //   - [maybe] snap-to-item scrolling
 //   - [maybe] sticky items
 //   - [maybe] headless UI via hooks (?)

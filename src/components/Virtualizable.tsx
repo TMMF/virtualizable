@@ -30,12 +30,18 @@ export const Virtualizable = <Key extends types.KeyBase, Item extends types.Item
   const canvasRef = React.useRef<CanvasRef<'div', HTMLDivElement>>(null)
 
   // throttle onVisible by a little bit to allow for multiple items to be visible at once
-  const _onVisible = React.useMemo(() => (onVisible ? utils.throttle(onVisible, 10) : undefined), [onVisible])
+  // TODO: this is fundamentally broken, need to fix it
+  const _onVisible = React.useMemo(() => (onVisible ? utils.debounce(onVisible, 50) : undefined), [onVisible])
   const onVisibleFactory = (key: Key) => {
     if (!_onVisible) return undefined
 
     return (visible: boolean) => {
-      visibleItemsRef.current[key] = visible
+      if (visible) {
+        visibleItemsRef.current[key] = true
+      } else {
+        delete visibleItemsRef.current[key]
+      }
+
       _onVisible(visibleItemsRef.current)
     }
   }
