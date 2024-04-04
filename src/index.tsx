@@ -8,6 +8,7 @@ export { default as Virtualizable } from './components/Virtualizable'
 //   - Support infinite scrolling canvas + reverse scrolling
 //   - Support streaming items (for infinite scrolling)
 //   - Context for scrolling (?)
+//   - Support maintaining focus / cursor position on elements when scrolling
 //   - Expose utils for customization
 //   - RTL document support (?)
 //   - Support SSR (useIsomorphicEffect, etc) / RSC children
@@ -18,11 +19,14 @@ export { default as Virtualizable } from './components/Virtualizable'
 //   - [maybe] sticky items
 //   - [maybe] headless UI via hooks (?)
 //   - [maybe] WebGL GPGPU preprocessing
+// - Packages
+//   - Separate Core vs. React code
+//   - Monorepo tooling
 // - Accessibility
 //   - Support keyboard navigation (accessibility)
 //   - Support aria-live (?) for screen readers
 //   - aria-labels (grid?)
-// - Tooling
+// - Misc
 //   - Performance profiling/debugging utilities/event handlers (help to identify bottlenecks and adjust parameters accordingly)
-// - Documentation
+//   - Benchmarking utilities + CI tests
 //   - Create documentation with Docusaurus (https://docusaurus.io/)

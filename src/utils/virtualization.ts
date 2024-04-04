@@ -1,5 +1,5 @@
 import * as types from '../types'
-import { diffSets } from './generic'
+import { areKeysEqual, diffSets, isSizeEqual } from './generic'
 import { measure } from './perf'
 
 const getBucketKey = (x: number, y: number): types.BucketKey => `${x}-${y}`
@@ -196,4 +196,123 @@ export const calculateVisibleKeys = <Key extends types.KeyBase, Item extends typ
   }
 
   return visibleKeys
+}
+
+export const DEFAULT_SCROLL_POSITION = { x: 0, y: 0 }
+export const DEFAULT_VIEWPORT_SIZE = { width: 0, height: 0 }
+
+type Listener = () => unknown
+
+export type VirtualizableArgs<Key extends types.KeyBase, Item extends types.ItemBase> = {
+  // --- Required Args ---
+  items: types.Collection<Key, Item>
+  getBoundingBox: types.GetBoundingBox<Key, Item>
+  viewportSize: types.Size
+  // --- Optional Args ---
+  scrollPosition?: types.Position
+  // --- Performance Optimizations ---
+  overscan?: types.PositiveNumber
+  precomputedCanvasSize?: types.Size
+  precomputedBucketSize?: types.PositiveNumber
+  precomputedBuckets?: types.Buckets<Key>
+}
+
+// TODO: class based approach here may be best (since there's internal state)
+export const virtualizable = <Key extends types.KeyBase, Item extends types.ItemBase>(
+  args: VirtualizableArgs<Key, Item>
+) => {
+  const id = '<TODO>' // TODO: generate ID
+  let internalData = { overscan: 100, scrollPosition: DEFAULT_SCROLL_POSITION, ...args }
+  const listeners: Listener[] = []
+
+  const _process = () =>
+    measure('Processing', () =>
+      process<Key, Item>({
+        id,
+        items: internalData.items,
+        getBoundingBox: internalData.getBoundingBox,
+        precomputedCanvasSize: internalData.precomputedCanvasSize,
+        precomputedBucketSize: internalData.precomputedBucketSize,
+        precomputedBuckets: internalData.precomputedBuckets,
+      })
+    )
+
+  // TODO: lazily set PROCESSED
+  let processed = _process()
+
+  const _calculateKeys = () =>
+    measure('Calculating Visible Keys', () =>
+      calculateVisibleKeys({
+        scroll: internalData.scrollPosition,
+        bucketSize: processed.bucketSize,
+        buckets: processed.buckets,
+        getBoundingBox: internalData.getBoundingBox,
+        viewportSize: internalData.viewportSize,
+        items: internalData.items,
+        overscan: internalData.overscan,
+      })
+    )
+
+  const emitListeners = () => {
+    listeners.forEach((listener) => listener())
+  }
+
+  let DATA = {
+    canvasSize: processed.size,
+    visibleKeys: [] as Key[],
+  }
+
+  // TODO: figure out ideal API that works well with React
+  return {
+    subscribe: (listener: Listener) => {
+      listeners.push(listener)
+
+      return () => {
+        listeners.splice(listeners.indexOf(listener), 1)
+      }
+    },
+    get: () => DATA,
+    set: (updateArgs: Partial<VirtualizableArgs<Key, Item>>) => {
+      const newInternalData = { ...internalData, ...updateArgs }
+
+      let newProcessed = processed
+      if (
+        newInternalData.items !== internalData.items ||
+        newInternalData.getBoundingBox !== internalData.getBoundingBox ||
+        newInternalData.precomputedBucketSize !== internalData.precomputedBucketSize ||
+        newInternalData.precomputedBuckets !== internalData.precomputedBuckets ||
+        newInternalData.precomputedCanvasSize !== internalData.precomputedCanvasSize
+      ) {
+        newProcessed = _process()
+      }
+
+      let newVisibleKeys = DATA.visibleKeys
+      if (
+        newInternalData.scrollPosition !== internalData.scrollPosition ||
+        newInternalData.getBoundingBox !== internalData.getBoundingBox ||
+        newInternalData.viewportSize !== internalData.viewportSize ||
+        newInternalData.items !== internalData.items ||
+        newInternalData.overscan !== internalData.overscan ||
+        newProcessed !== processed
+      ) {
+        newVisibleKeys = _calculateKeys()
+      }
+
+      if (processed === newProcessed && DATA.visibleKeys === newVisibleKeys) return
+
+      const changed = !areKeysEqual(DATA.visibleKeys, newVisibleKeys) || !isSizeEqual(processed.size, newProcessed.size)
+      internalData = newInternalData
+      processed = newProcessed
+      DATA.visibleKeys = newVisibleKeys
+
+      if (changed) {
+        DATA = {
+          canvasSize: newProcessed.size,
+          visibleKeys: newVisibleKeys,
+        }
+
+        emitListeners()
+      }
+    },
+  }
 }

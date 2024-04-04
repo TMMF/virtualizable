@@ -47,3 +47,7 @@ export const diffSets = <T>(prev: Set<T>, next: Set<T>) => {
 
   return { added, removed }
 }
+
+export const isSizeEqual = (a: types.Size, b: types.Size) => a.width === b.width && a.height === b.height
+
+export const isPositionEqual = (a: types.Position, b: types.Position) => a.x === b.x && a.y === b.y

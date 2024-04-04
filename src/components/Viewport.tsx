@@ -54,7 +54,7 @@ const Viewport = <
     size,
     visibleKeys,
     onScroll: throttledScroll,
-  } = utils.useVirtualizable<Key, Item, ElKey, Element>({
+  } = utils.useVirtualizable2<Key, Item, ElKey, Element>({
     items,
     getBoundingBox,
     precomputedCanvasSize,

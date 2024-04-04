@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as types from '../types'
 import { measure } from './perf'
-import { process, calculateVisibleKeys } from './virtualization'
+import { process, calculateVisibleKeys, virtualizable, DEFAULT_VIEWPORT_SIZE } from './virtualization'
 import { unsafeHtmlDivElementTypeCoercion } from './coercion'
 import { throttle, areKeysEqual } from './generic'
 
@@ -219,6 +219,102 @@ export const useVirtualizable = <
   return {
     domRef,
     size,
+    visibleKeys,
+    onScroll,
+  }
+}
+
+export const useVirtualizable2 = <
+  Key extends types.KeyBase,
+  Item extends types.ItemBase,
+  ElKey extends types.SupportedElementKeys,
+  Element extends types.SupportedElements[ElKey]
+>(
+  args: UseVirtualizableArgs<Key, Item>
+): UseVirtualizableResult<Key, ElKey, Element> => {
+  const {
+    items,
+    getBoundingBox,
+    precomputedBuckets,
+    precomputedBucketSize,
+    precomputedCanvasSize,
+    overscan = 100,
+    scrollThrottle = 50,
+  } = args
+
+  const domRef = React.useRef<Element>(null)
+
+  const v = React.useMemo(
+    () =>
+      virtualizable<Key, Item>({
+        items,
+        getBoundingBox,
+        viewportSize: DEFAULT_VIEWPORT_SIZE,
+        precomputedCanvasSize,
+        precomputedBucketSize,
+        precomputedBuckets,
+        overscan,
+      }),
+    // Ignoring since this is just to initialize within React's context
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
+
+  const { canvasSize, visibleKeys } = React.useSyncExternalStore(v.subscribe, v.get)
+
+  useOnDepChange(() => {
+    v.set({
+      items,
+      precomputedBucketSize,
+      precomputedBuckets,
+      precomputedCanvasSize,
+      overscan,
+    })
+  }, [items, precomputedBucketSize, precomputedBuckets, precomputedCanvasSize, overscan])
+
+  useMountEffect(() => {
+    v.set({
+      viewportSize: unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? DEFAULT_VIEWPORT_SIZE,
+    })
+  })
+
+  React.useEffect(() => {
+    const el = domRef.current
+    if (!el) return
+
+    if (!window.ResizeObserver) {
+      const cb = (e: UIEvent) => {
+        if (!e.target) return
+        v.set({ viewportSize: unsafeHtmlDivElementTypeCoercion(e.target).getBoundingClientRect() })
+      }
+
+      const _el = unsafeHtmlDivElementTypeCoercion(el)
+      _el.addEventListener('resize', cb)
+      return _el.removeEventListener('resize', cb)
+    }
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      v.set({ viewportSize: entry.contentRect })
+    })
+
+    if (el) resizeObserver.observe(el as Element)
+    return () => resizeObserver.disconnect()
+  }, [v])
+
+  const onScroll = React.useMemo(
+    () =>
+      throttle((event: React.UIEvent<Element>) => {
+        const target = unsafeHtmlDivElementTypeCoercion(event.target)
+        const scrollPosition = { x: target.scrollLeft, y: target.scrollTop }
+        v.set({ scrollPosition })
+      }, scrollThrottle),
+    [scrollThrottle, v]
+  )
+
+  return {
+    domRef,
+    size: canvasSize,
     visibleKeys,
     onScroll,
   }
