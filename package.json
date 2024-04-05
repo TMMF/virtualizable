@@ -1,76 +1,20 @@
 {
-  "version": "0.0.0",
-  "license": "MIT",
-  "main": "./dist/virtualizable.cjs",
-  "typings": "./dist/index.d.ts",
-  "files": [
-    "dist",
-    "src"
-  ],
-  "engines": {
-    "node": ">=18"
-  },
-  "scripts": {
-    "start": "NODE_ENV='development' rollup --config --watch",
-    "build": "NODE_ENV='production' rollup --config",
-    "test": "vitest **/*.test.tsx",
-    "lint": "eslint src/",
-    "prepare": "npm run build",
-    "size": "size-limit",
-    "analyze": "size-limit --why",
-    "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook",
-    "validate": "npm run lint && npm run test && npm run size",
-    "clean": "rm -rf dist/"
-  },
-  "peerDependencies": {
-    "react": ">=18"
-  },
-  "name": "virtualizable",
+  "name": "root",
   "author": "Tiago Ferreira",
-  "module": "./dist/virtualizable.mjs",
-  "size-limit": [
-    {
-      "path": "./dist/virtualizable.cjs",
-      "limit": "10 KB"
-    },
-    {
-      "path": "./dist/virtualizable.mjs",
-      "limit": "10 KB"
-    }
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
+  "scripts": {
+    "clean": "lerna clean",
+    "build": "lerna run build",
+    "test": "lerna run test",
+    "lint": "lerna run lint",
+    "prepare": "lerna run prepare",
+    "release": "lerna publish"
+  },
   "devDependencies": {
-    "@babel/core": "7.24.3",
-    "@babel/preset-env": "7.24.3",
-    "@babel/preset-react": "7.24.1",
-    "@rollup/plugin-babel": "6.0.4",
-    "@rollup/plugin-commonjs": "25.0.7",
-    "@rollup/plugin-json": "6.1.0",
-    "@rollup/plugin-node-resolve": "15.2.3",
-    "@rollup/plugin-replace": "5.0.5",
-    "@rollup/plugin-terser": "0.4.4",
-    "@size-limit/preset-small-lib": "11.0.3",
-    "@storybook/addon-essentials": "7.6.17",
-    "@storybook/addon-info": "5.3.21",
-    "@storybook/addon-links": "7.6.17",
-    "@storybook/addons": "7.6.17",
-    "@storybook/react": "7.6.17",
-    "@types/react": "18.2.65",
-    "@types/react-dom": "18.2.21",
-    "babel-plugin-annotate-pure-calls": "0.4.0",
-    "eslint": "8.57.0",
-    "eslint-plugin-react": "7.34.0",
-    "eslint-plugin-react-hooks": "4.6.0",
-    "fs-extra": "11.2.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "rollup": "4.13.0",
-    "rollup-plugin-sourcemaps": "0.6.3",
-    "rollup-plugin-typescript2": "0.36.0",
-    "size-limit": "11.0.2",
-    "tslib": "2.6.2",
-    "typescript": "5.4.2",
-    "typescript-eslint": "7.2.0",
-    "vitest": "1.4.0"
+    "lerna": "8.1.2"
   }
 }

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as types from '../types'
-import { virtualizable, DEFAULT_VIEWPORT_SIZE } from './virtualization'
+import { virtualizable, DEFAULT_VIEWPORT_SIZE } from '@virtualizable/core'
 import { unsafeHtmlDivElementTypeCoercion } from './coercion'
 import { throttle } from './generic'
 

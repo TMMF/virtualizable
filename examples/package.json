@@ -17,7 +17,8 @@
     "react": "../node_modules/react",
     "react-dom": "../node_modules/react-dom",
     "scheduler/tracing": "../node_modules/scheduler/tracing-profiling",
-    "@virtualizable/react": ".."
+    "@virtualizable/core": "../packages/core",
+    "@virtualizable/react": "../packages/react"
   },
   "devDependencies": {
     "@types/react": "18.2.65",

@@ -1,5 +1,3 @@
-'use client'
-
 export { default as Virtualizable } from './components/Virtualizable'
 
 // TODO:

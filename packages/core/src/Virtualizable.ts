@@ -1,6 +1,5 @@
-import * as types from '../types'
-import { areKeysEqual, diffSets, isSizeEqual } from './generic'
-import { measure } from './perf'
+import * as types from './types'
+import * as utils from './utils'
 
 const getBucketKey = (x: number, y: number): types.BucketKey => `${x}-${y}`
 export const getItem = <Key extends types.KeyBase, Item extends types.ItemBase>(
@@ -84,12 +83,12 @@ export const process = <Key extends types.KeyBase, Item extends types.ItemBase>(
   // --- No previous data; preprocess ---
   const prev = prevData[id]
   if (!prev) {
-    const size = precomputedCanvasSize ?? measure('Size', () => calculateCanvasSize(items, getBoundingBox))
+    const size = precomputedCanvasSize ?? utils.measure('Size', () => calculateCanvasSize(items, getBoundingBox))
     // TODO: this methodology for bucketSize isn't great if there's clustering of items or if items are tightly packed
     // on a large viewport
     const bucketSize = precomputedBucketSize ?? Math.max(100, Math.min(size.width, size.height, 1000))
     const getBucket = getBucketFactory(getBoundingBox, bucketSize)
-    const buckets = precomputedBuckets ?? measure('Buckets', () => calculateBuckets(items, getBucket))
+    const buckets = precomputedBuckets ?? utils.measure('Buckets', () => calculateBuckets(items, getBucket))
 
     prevData[id] = { items, size, bucketSize, buckets }
     return { size, bucketSize, buckets }
@@ -98,18 +97,18 @@ export const process = <Key extends types.KeyBase, Item extends types.ItemBase>(
   // --- Previous data exists; diff changes ---
   if (items !== prev.items) {
     // TODO: this is a naive implementation; we should be able to diff the items and update the size accordingly
-    const size = precomputedCanvasSize ?? measure('Size', () => calculateCanvasSize(items, getBoundingBox))
+    const size = precomputedCanvasSize ?? utils.measure('Size', () => calculateCanvasSize(items, getBoundingBox))
     const bucketSize = precomputedBucketSize ?? Math.max(100, Math.min(size.width, size.height, 1000))
     const getBucket = getBucketFactory(getBoundingBox, bucketSize)
 
     // Figure out diff'd items
     const prevItemsSet = new Set(Object.values(prev.items)) as Set<Item>
     const newItemsSet = new Set(Object.values(items)) as Set<Item>
-    const { added, removed } = diffSets(prevItemsSet, newItemsSet)
+    const { added, removed } = utils.diffSets(prevItemsSet, newItemsSet)
 
     const buckets =
       precomputedBuckets ??
-      measure('Buckets', () => {
+      utils.measure('Buckets', () => {
         // TODO: is copying necessary?
         const newBuckets = { ...prev.buckets } as types.Buckets<Key>
 
@@ -226,7 +225,7 @@ export const virtualizable = <Key extends types.KeyBase, Item extends types.Item
   const listeners: Listener[] = []
 
   const _process = () =>
-    measure('Processing', () =>
+    utils.measure('Processing', () =>
       process<Key, Item>({
         id,
         items: internalData.items,
@@ -241,7 +240,7 @@ export const virtualizable = <Key extends types.KeyBase, Item extends types.Item
   let processed = _process()
 
   const _calculateKeys = () =>
-    measure('Calculating Visible Keys', () =>
+    utils.measure('Calculating Visible Keys', () =>
       calculateVisibleKeys({
         scroll: internalData.scrollPosition,
         bucketSize: processed.bucketSize,
@@ -302,7 +301,8 @@ export const virtualizable = <Key extends types.KeyBase, Item extends types.Item
 
       if (processed === oldProcessed && visibleKeys === oldVisibleKeys) return
 
-      const changed = !areKeysEqual(visibleKeys, oldVisibleKeys) || !isSizeEqual(processed.size, oldProcessed.size)
+      const changed =
+        !utils.areKeysEqual(visibleKeys, oldVisibleKeys) || !utils.isSizeEqual(processed.size, oldProcessed.size)
       if (changed) {
         OUTPUT = {
           canvasSize: processed.size,

@@ -33,30 +33,8 @@ export const debounce = <Args extends unknown[]>(fn: (...args: Args) => unknown,
   }
 }
 
-export const areSetsEqual = <T>(a: Set<T>, b: Set<T>) => {
-  if (a.size !== b.size) return false
-  return [...a].every((item) => b.has(item))
-}
-
-export const areArraysEqual = <T>(a: T[], b: T[]) => {
-  if (a.length !== b.length) return false
-  return a.every((item, i) => item === b[i])
-}
-
-export const areKeysEqual = <Key extends types.KeyBase>(a: Key[], b: Key[]) => {
-  return areSetsEqual(new Set(a), new Set(b))
-}
-
-export const diffSets = <T>(prev: Set<T>, next: Set<T>) => {
-  const added: T[] = []
-  const removed: T[] = []
-
-  next.forEach((item) => (!prev.has(item) ? added.push(item) : null))
-  prev.forEach((item) => (!next.has(item) ? removed.push(item) : null))
-
-  return { added, removed }
-}
-
-export const isSizeEqual = (a: types.Size, b: types.Size) => a.width === b.width && a.height === b.height
-
-export const isPositionEqual = (a: types.Position, b: types.Position) => a.x === b.x && a.y === b.y
+export const getItem = <Key extends types.KeyBase, Item extends types.ItemBase>(
+  items: types.Collection<Key, Item>,
+  key: Key
+  // @ts-expect-error - TS doesn't think Key is a key of items
+) => items[key]

@@ -5,13 +5,11 @@ import json from '@rollup/plugin-json'
 import sourceMaps from 'rollup-plugin-sourcemaps'
 import typescript from 'rollup-plugin-typescript2'
 import replace from '@rollup/plugin-replace'
-import { babel } from '@rollup/plugin-babel';
+import { babel } from '@rollup/plugin-babel'
 import { DEFAULT_EXTENSIONS as DEFAULT_BABEL_EXTENSIONS } from '@babel/core'
 
-import pkg from './package.json' with { type: "json" }
-
 export default {
-  input: 'src/index.tsx',
+  input: 'src/index.ts',
   watch: {
     include: 'src/**',
   },
@@ -20,21 +18,17 @@ export default {
   },
   output: [
     {
-      file: pkg.main,
       format: 'cjs',
       sourcemap: true,
       exports: 'named',
-      globals: { react: 'React' },
     },
     {
-      file: pkg.module,
       format: 'esm',
       sourcemap: true,
       exports: 'named',
-      globals: { react: 'React' },
     },
   ],
-  external: [/node_modules/],
+  external: [/node_modules/, /@virtualizable/],
   plugins: [
     resolve({
       mainFields: ['module', 'main', 'browser'],
@@ -56,17 +50,19 @@ export default {
       __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
     }),
     sourceMaps(),
-    process.env.NODE_ENV === 'production' ? terser({
-      output: { comments: false },
-      compress: {
-        keep_infinity: true,
-        pure_getters: true,
-        passes: 10,
-      },
-      ecma: 2020,
-      module: false,
-      toplevel: true,
-      warnings: true,
-    }) : undefined,
+    process.env.NODE_ENV === 'production'
+      ? terser({
+          output: { comments: false },
+          compress: {
+            keep_infinity: true,
+            pure_getters: true,
+            passes: 10,
+          },
+          ecma: 2020,
+          module: false,
+          toplevel: true,
+          warnings: true,
+        })
+      : undefined,
   ],
 }
