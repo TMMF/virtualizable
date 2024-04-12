@@ -19,9 +19,8 @@ export { default as Virtualizable } from './components/Virtualizable'
 //   - [maybe] headless UI via hooks (?)
 //   - [maybe] WebGL GPGPU preprocessing
 // - Packages
-//   - Separate Core vs. React code
-//   - Monorepo tooling
-// - Accessibility
+//   - 'semantic-release' + 'commitlint' npm packages for automated releases
+// - Accessibility [https://www.w3.org/WAI/ARIA/apg/patterns/]
 //   - Support keyboard navigation (accessibility)
 //   - Support aria-live (?) for screen readers
 //   - aria-labels (grid?)
@@ -29,3 +28,5 @@ export { default as Virtualizable } from './components/Virtualizable'
 //   - Performance profiling/debugging utilities/event handlers (help to identify bottlenecks and adjust parameters accordingly)
 //   - Benchmarking utilities + CI tests
 //   - Create documentation with Docusaurus (https://docusaurus.io/)
+//   - Test Suites (core, react)
+//   - CLI for upgrading versions

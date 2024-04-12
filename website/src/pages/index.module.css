@@ -1,0 +1,148 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.banner {
+  padding: 4rem 0;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  background: none;
+  box-shadow: 0px 2px 6px 0px rgba(0, 0, 0, 0.25) inset;
+}
+
+@media screen and (max-width: 996px) {
+  .banner {
+    padding: 2rem;
+  }
+}
+
+.container {
+  max-width: 400px;
+  margin-left: 20px;
+}
+
+.title {
+  color: white;
+  text-shadow: 0px 1px 2px #000;
+  margin-bottom: 10px;
+}
+
+.tagline {
+  color: white;
+  text-shadow: 0px 1px 2px #000;
+  line-height: 1.2;
+  margin-bottom: 25px;
+}
+
+.fullsize {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.gradient {
+  --grad1: 1, 76%, 58%;
+  --grad2: 204, 90%, 77%;
+  /* --grad3: 276, 60%, 76%; */
+  --grad3: 319, 66%, 62%;
+
+  background-color: hsla(var(--grad3), 1);
+  background-image: radial-gradient(
+      at var(--grad1XPos) var(--grad1YPos),
+      hsla(var(--grad1), 1) 0,
+      hsla(var(--grad1), 0) var(--grad1Size)
+    ),
+    radial-gradient(
+      at var(--grad2XPos) var(--grad2YPos),
+      hsla(var(--grad2), 1) 0,
+      hsla(var(--grad2), 0) var(--grad2Size)
+    ),
+    radial-gradient(
+      at var(--grad3XPos) var(--grad3YPos),
+      hsla(var(--grad3), 1) 0,
+      hsla(var(--grad3), 0) var(--grad3Size)
+    );
+}
+
+.noise {
+  background: url(/img/noise.svg);
+  filter: contrast(150%);
+  opacity: 0.15;
+  opacity: 0.3;
+  mix-blend-mode: multiply;
+}
+
+.darken {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) max(45%, 450px));
+}
+
+.gridContainer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.maskGrid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 64px;
+  width: calc(var(--numCols) * 74px);
+  -webkit-mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0) 2%, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0) 98%);
+}
+
+.animatedGrid {
+  display: grid;
+  grid-template-rows: repeat(var(--numRows), 1fr);
+  grid-template-columns: repeat(var(--numCols), 1fr);
+  gap: 10px;
+  animation: slide 10s linear infinite;
+}
+
+@keyframes slide {
+  0% {
+    translate: 0 0;
+  }
+  100% {
+    translate: 0 -74px;
+  }
+}
+
+.animatedGridItem {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0px 2px 6px 0px rgba(0, 0, 0, 0.25);
+  padding: 20px;
+  text-align: center;
+
+  border-radius: 10px;
+  border: 15px solid #d9d9d9;
+  box-shadow: 0px 4px 4px 0px #000 inset;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+}
+
+.buttons a {
+  border-radius: 23px;
+  box-shadow: 0px 1px 2px #000;
+
+  padding-top: 10px;
+  padding-bottom: 6px;
+}
+
+.buttons a:active {
+  box-shadow: 0px 0.5px 1px #000;
+}
