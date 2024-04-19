@@ -1,30 +1,14 @@
 import * as React from 'react'
 import * as types from '../types'
-import { virtualizable, DEFAULT_VIEWPORT_SIZE } from '@virtualizable/core'
+import { Virtualizable } from '@virtualizable/core'
 import { unsafeHtmlDivElementTypeCoercion } from './coercion'
 import { throttle } from './generic'
+
+const DEFAULT_VIEWPORT_SIZE = { width: 0, height: 0 }
 
 export const useMountEffect = (fn: () => void): void => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(fn, [])
-}
-
-/**
- * Better to use this than a useEffect since this will execute within the same render cycle instead of causing
- * a second render back-to-back. By default, it won't execute on the first render since nothing has 'changed'.
- */
-export const useOnDepChange = (
-  fn: () => void,
-  deps: React.DependencyList,
-  options?: { executeFirstRender?: boolean }
-): void => {
-  const { executeFirstRender = false } = options ?? {}
-  const prevDeps = React.useRef(executeFirstRender ? undefined : deps)
-
-  if (deps.some((dep, i) => dep !== prevDeps.current?.[i])) {
-    prevDeps.current = deps
-    fn()
-  }
 }
 
 type Fn<Args extends unknown[], Res> = (...args: Args) => Res
@@ -84,7 +68,7 @@ export const useVirtualizable = <
 
   const v = React.useMemo(
     () =>
-      virtualizable<Key, Item>({
+      new Virtualizable<Key, Item>({
         items,
         getBoundingBox,
         viewportSize: DEFAULT_VIEWPORT_SIZE,
@@ -98,22 +82,25 @@ export const useVirtualizable = <
     []
   )
 
-  const { canvasSize, visibleKeys } = React.useSyncExternalStore(v.subscribe, v.get)
-
-  useOnDepChange(() => {
-    v.set({
-      items,
-      precomputedBucketSize,
-      precomputedBuckets,
-      precomputedCanvasSize,
-      overscan,
-    })
-  }, [items, precomputedBucketSize, precomputedBuckets, precomputedCanvasSize, overscan])
+  React.useEffect(() => {
+    React.startTransition(() =>
+      v.update({
+        items,
+        precomputedBucketSize,
+        precomputedBuckets,
+        precomputedCanvasSize,
+        overscan,
+      })
+    )
+  }, [items, precomputedBucketSize, precomputedBuckets, precomputedCanvasSize, overscan, v])
 
   useMountEffect(() => {
-    v.set({
-      viewportSize: unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? DEFAULT_VIEWPORT_SIZE,
-    })
+    React.startTransition(() =>
+      v.update({
+        viewportSize:
+          unsafeHtmlDivElementTypeCoercion(domRef.current)?.getBoundingClientRect() ?? DEFAULT_VIEWPORT_SIZE,
+      })
+    )
   })
 
   React.useEffect(() => {
@@ -123,7 +110,9 @@ export const useVirtualizable = <
     if (!window.ResizeObserver) {
       const cb = (e: UIEvent) => {
         if (!e.target) return
-        v.set({ viewportSize: unsafeHtmlDivElementTypeCoercion(e.target).getBoundingClientRect() })
+        React.startTransition(() =>
+          v.update({ viewportSize: unsafeHtmlDivElementTypeCoercion(e.target)?.getBoundingClientRect() })
+        )
       }
 
       const _el = unsafeHtmlDivElementTypeCoercion(el)
@@ -133,7 +122,7 @@ export const useVirtualizable = <
 
     const resizeObserver = new ResizeObserver((entries) => {
       const entry = entries[0]
-      v.set({ viewportSize: entry.contentRect })
+      React.startTransition(() => v.update({ viewportSize: entry.contentRect }))
     })
 
     if (el) resizeObserver.observe(el as Element)
@@ -145,15 +134,21 @@ export const useVirtualizable = <
       throttle((event: React.UIEvent<Element>) => {
         const target = unsafeHtmlDivElementTypeCoercion(event.target)
         const scrollPosition = { x: target.scrollLeft, y: target.scrollTop }
-        v.set({ scrollPosition })
+        React.startTransition(() => v.update({ scrollPosition }))
       }, scrollThrottle),
     [scrollThrottle, v]
   )
 
-  return {
-    domRef,
-    size: canvasSize,
-    visibleKeys,
-    onScroll,
-  }
+  const canvasSize = React.useSyncExternalStore(v.subscribe, v.getCanvasSize)
+  const visibleKeys = React.useSyncExternalStore(v.subscribe, v.getVisibleKeys)
+
+  return React.useMemo(
+    () => ({
+      domRef,
+      size: canvasSize,
+      visibleKeys: Array.from(visibleKeys),
+      onScroll,
+    }),
+    [canvasSize, onScroll, visibleKeys]
+  )
 }
