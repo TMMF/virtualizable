@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as ReactDOM from 'react-dom/client'
-import { Virtualizable } from '@virtualizable/react'
+import { Virtualizable, type VirtualizableRef } from '@virtualizable/react'
 
 const ITEMS: { id: string; x: number; y: number; width: number; height: number }[] = []
 const GRID_SIZE = 20
@@ -24,6 +24,7 @@ const renderItem = (item, key) => {
 }
 
 const App = () => {
+  const virtualizableRef = React.useRef<VirtualizableRef>()
   const [items, setItems] = React.useState(ITEMS)
   const addItem = React.useCallback(() => {
     setItems((prevItems) => {
@@ -36,13 +37,22 @@ const App = () => {
     })
   }, [])
 
+  const scrollToItem = React.useCallback(() => {
+    virtualizableRef.current?.scrollToItem(
+      ITEMS.findIndex((item) => item.id === '10-10'),
+      { alignment: 'auto', padding: 10, behavior: 'smooth' }
+    )
+  }, [])
+
   return (
     <>
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={addItem}>Add Item</button>
+        <button onClick={scrollToItem}>Scroll To 10-10</button>
       </div>
       <div style={{ border: '1px solid green', width: '50vw', height: '50vh' }}>
         <Virtualizable
+          ref={virtualizableRef}
           items={items}
           getBoundingBox={getBoundingBox}
           renderItem={renderItem}

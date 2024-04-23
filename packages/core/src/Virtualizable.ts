@@ -36,14 +36,14 @@ export class Virtualizable<
   #parameters: Defined<VirtualizableParams<Key, Item, Items>, 'scrollPosition' | 'overscan'>
   #listeners: types.Listener[]
   #processed: ProcessingResult<Key>
-  #visibleKeys: Set<Key>
+  #renderedKeys: Set<Key>
 
   constructor(args: VirtualizableParams<Key, Item, Items>) {
     this.#parameters = { overscan: 100, scrollPosition: { x: 0, y: 0 }, ...args }
     this.#listeners = []
 
     this.#processed = this.#processInit()
-    this.#visibleKeys = this.#calculateKeys()
+    this.#renderedKeys = this.#calculateKeys()
   }
 
   #getBucketKey = (x: number, y: number): types.BucketKey => {
@@ -178,7 +178,7 @@ export class Virtualizable<
     const bucketMaxX = Math.floor((scroll.x + viewportSize.width + overscan) / bucketSize)
     const bucketMaxY = Math.floor((scroll.y + viewportSize.height + overscan) / bucketSize)
 
-    const visibleKeys: Set<Key> = new Set()
+    const renderedKeys: Set<Key> = new Set()
 
     for (let x = bucketMinX - 1; x <= bucketMaxX + 1; x++) {
       for (let y = bucketMinY - 1; y <= bucketMaxY + 1; y++) {
@@ -196,13 +196,13 @@ export class Virtualizable<
             box.x + box.width > scroll.x - overscan &&
             box.y + box.height > scroll.y - overscan
           ) {
-            visibleKeys.add(key)
+            renderedKeys.add(key)
           }
         }
       }
     }
 
-    return visibleKeys
+    return renderedKeys
   }
 
   #broadcast = (): void => {
@@ -222,14 +222,14 @@ export class Virtualizable<
     return this.#processed.size
   }
 
-  getVisibleKeys = (): Set<Key> => {
-    return this.#visibleKeys
+  getRenderedKeys = (): Set<Key> => {
+    return this.#renderedKeys
   }
 
-  update = (updateArgs: Partial<VirtualizableParams<Key, Item, Items>>): void => {
+  updateParams = (updateArgs: Partial<VirtualizableParams<Key, Item, Items>>): void => {
     const prevParameters = this.#parameters
     const prevProcessed = this.#processed
-    const prevVisibleKeys = this.#visibleKeys
+    const prevRenderedKeys = this.#renderedKeys
     this.#parameters = { ...this.#parameters, ...updateArgs }
 
     const processedArgs = [
@@ -244,26 +244,31 @@ export class Virtualizable<
       this.#processed = this.#process(prevParameters)
     }
 
-    const visibleKeysArgs = ['scrollPosition', 'getBoundingBox', 'viewportSize', 'items', 'overscan'] as const
+    const renderedKeysArgs = ['scrollPosition', 'getBoundingBox', 'viewportSize', 'items', 'overscan'] as const
     if (
-      visibleKeysArgs.some((key) => prevParameters[key] !== this.#parameters[key]) ||
+      renderedKeysArgs.some((key) => prevParameters[key] !== this.#parameters[key]) ||
       prevProcessed !== this.#processed
     ) {
       // Data for calculating visible keys has changed, recalculate visible keys
-      this.#visibleKeys = this.#calculateKeys()
+      this.#renderedKeys = this.#calculateKeys()
     }
 
     // Return if no changes based on reference equality
-    if (prevProcessed === this.#processed && prevVisibleKeys === this.#visibleKeys) return
+    if (prevProcessed === this.#processed && prevRenderedKeys === this.#renderedKeys) return
 
     // Return if no changes based on set equality
     if (
-      utils.areSetsEqual(this.#visibleKeys, prevVisibleKeys) &&
+      utils.areSetsEqual(this.#renderedKeys, prevRenderedKeys) &&
       utils.isSizeEqual(this.#processed.size, prevProcessed.size)
     )
       return
 
     // Emit changes to listeners
     this.#broadcast()
+  }
+
+  recompute = (): void => {
+    this.#processed = this.#processInit()
+    this.#renderedKeys = this.#calculateKeys()
   }
 }

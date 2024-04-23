@@ -6,8 +6,12 @@ export type ItemProps = {
   onVisible?: (visible: boolean) => void
 }
 
-export type ItemRef<ElKey extends types.SupportedElementKeys, Element extends types.SupportedElements[ElKey]> = {
+export type ItemRef<
+  ElKey extends types.SupportedElementKeys = types.SupportedElementKeys,
+  Element extends types.SupportedElements[ElKey] = types.SupportedElements[ElKey]
+> = {
   getInnerRef: () => React.Ref<Element> | undefined
+  getBoundingBox: () => types.Box
 }
 
 export const Item = <ElKey extends types.SupportedElementKeys, Element extends types.SupportedElements[ElKey]>(
@@ -39,10 +43,11 @@ export const Item = <ElKey extends types.SupportedElementKeys, Element extends t
 
   React.useImperativeHandle(
     ref,
-    () => ({
+    (): ItemRef<ElKey, Element> => ({
       getInnerRef: () => domRef,
+      getBoundingBox: () => box,
     }),
-    []
+    [box]
   )
 
   return (
@@ -51,8 +56,7 @@ export const Item = <ElKey extends types.SupportedElementKeys, Element extends t
       ref={domRef}
       style={{
         position: 'absolute',
-        left: box.x,
-        top: box.y,
+        translate: `${box.x}px ${box.y}px`,
         width: box.width,
         height: box.height,
         ...style,

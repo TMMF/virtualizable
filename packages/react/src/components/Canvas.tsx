@@ -1,28 +1,18 @@
 import * as React from 'react'
-import { CanvasContext, ItemContext } from '../contexts'
+import { CanvasContext } from '../contexts'
 import * as types from '../types'
+import CanvasItemProvider from './CanvasItemProvider'
 
-// Breaking this up allows memoization and preventing unnecessary re-renders
-const ItemProvider = React.memo(function ItemProvider(props: {
-  item: types.ItemBase
-  k: types.KeyBase
-  getBoundingBox: types.GetBoundingBox<types.KeyBase, types.ItemBase>
-  renderItem: types.RenderItem<types.KeyBase, types.ItemBase>
-}) {
-  const { item, k: key, getBoundingBox, renderItem } = props
-  const itemContextValue = React.useMemo(() => ({ box: getBoundingBox(item, key) }), [item, key, getBoundingBox])
-
-  return <ItemContext.Provider value={itemContextValue}>{renderItem(item, key)}</ItemContext.Provider>
-})
-
-// ---
-
-export type CanvasProps<Key extends types.KeyBase, Item extends types.ItemBase> = {
+export type CanvasProps<Key extends types.KeyBase = types.KeyBase, Item extends types.ItemBase = types.ItemBase> = {
   renderItem: types.RenderItem<Key, Item>
 }
 
-export type CanvasRef<ElKey extends types.SupportedElementKeys, Element extends types.SupportedElements[ElKey]> = {
+export type CanvasRef<
+  ElKey extends types.SupportedElementKeys = types.SupportedElementKeys,
+  Element extends types.SupportedElements[ElKey] = types.SupportedElements[ElKey]
+> = {
   getInnerRef: () => React.Ref<Element> | undefined
+  getCanvasSize: () => types.Size
 }
 
 export const Canvas = <
@@ -43,17 +33,18 @@ export const Canvas = <
   const domRef = React.useRef<Element>(null)
   React.useImperativeHandle(
     ref,
-    () => ({
+    (): CanvasRef<ElKey, Element> => ({
       getInnerRef: () => domRef,
+      getCanvasSize: () => size,
     }),
-    []
+    [size]
   )
 
   return (
     <Component {...rest} ref={domRef} style={{ width, height, position: 'relative', ...style }}>
       {visibleEntries.map(([key, item]) => (
         // @ts-expect-error - Item != Item; gotta fix the types
-        <ItemProvider key={key} k={key} item={item} getBoundingBox={getBoundingBox} renderItem={renderItem} />
+        <CanvasItemProvider key={key} k={key} item={item} getBoundingBox={getBoundingBox} renderItem={renderItem} />
       ))}
       {children}
     </Component>

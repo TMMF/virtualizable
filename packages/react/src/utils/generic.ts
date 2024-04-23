@@ -37,4 +37,4 @@ export const getItem = <Key extends types.KeyBase, Item extends types.ItemBase>(
   items: types.Collection<Key, Item>,
   key: Key
   // @ts-expect-error - TS doesn't think Key is a key of items
-) => items[key]
+): Item => items[key]

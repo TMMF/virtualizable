@@ -7,10 +7,10 @@ type InnerComponentProps<K extends keyof JSX.IntrinsicElements> = types.InnerCom
   onScroll?: React.UIEventHandler<types.GetElementType<K>>
 }
 
-export type ViewportProps<Key extends types.KeyBase, Item extends types.ItemBase> = utils.UseVirtualizableArgs<
-  Key,
-  Item
-> & {
+export type ViewportProps<
+  Key extends types.KeyBase = types.KeyBase,
+  Item extends types.ItemBase = types.ItemBase
+> = utils.UseVirtualizableArgs<Key, Item> & {
   //onCanvasSizeChange?: // size change
   //onBucketsChange?: // buckets change
   //onPreprocessed?: // Preprocessed data (when it finishes; indicative of when the component is ready to render)
@@ -18,8 +18,15 @@ export type ViewportProps<Key extends types.KeyBase, Item extends types.ItemBase
   //onItemsVisible?: (items: types.Collection<Key, Item>) => void // Rendered + Visible items (when it changes)
 }
 
-export type ViewportRef<ElKey extends types.SupportedElementKeys, Element extends types.SupportedElements[ElKey]> = {
+export type ViewportRef<
+  Key extends types.KeyBase = types.KeyBase,
+  ElKey extends types.SupportedElementKeys = types.SupportedElementKeys,
+  Element extends types.SupportedElements[ElKey] = types.SupportedElements[ElKey]
+> = {
   getInnerRef: () => React.Ref<Element> | undefined
+  scrollTo: (x: number, y: number) => void
+  scrollToItem: (key: Key, options?: types.ScrollToItemOptions) => void
+  recompute: () => void
 }
 
 const Viewport = <
@@ -30,7 +37,7 @@ const Viewport = <
   ICP extends InnerComponentProps<ElKey> = InnerComponentProps<ElKey>
 >(
   props: types.AsProps<ElKey, ICP> & ViewportProps<Key, Item>,
-  ref: React.Ref<ViewportRef<ElKey, Element>>
+  ref: React.Ref<ViewportRef<Key, ElKey, Element>>
 ) => {
   const {
     items,
@@ -52,8 +59,13 @@ const Viewport = <
   const {
     domRef,
     size,
-    visibleKeys,
+    renderedKeys,
+    /* renderedItems,
+    renderedEntries, */
     onScroll: throttledScroll,
+    scrollTo,
+    scrollToItem,
+    recompute,
   } = utils.useVirtualizable<Key, Item, ElKey, Element>({
     items,
     getBoundingBox,
@@ -67,9 +79,9 @@ const Viewport = <
   const handleScroll = utils.useMergeFns<[React.UIEvent<Element>]>(onScroll, throttledScroll)
 
   const canvasContextValue = React.useMemo(() => {
-    const visibleEntries = visibleKeys.map((key): [Key, Item] => [key, utils.getItem(items, key)])
+    const visibleEntries = renderedKeys.map((key): [Key, Item] => [key, utils.getItem(items, key)])
     return { size, visibleEntries, getBoundingBox }
-  }, [items, size, visibleKeys, getBoundingBox])
+  }, [items, size, renderedKeys, getBoundingBox])
 
   const style = React.useMemo(
     () => ({ overflow: 'auto', border: '1px solid blue', maxHeight: '100%', ..._style }),
@@ -78,27 +90,21 @@ const Viewport = <
 
   React.useImperativeHandle(
     ref,
-    () => ({
+    (): ViewportRef<Key, ElKey, Element> => ({
       getInnerRef: () => domRef,
-      /* scrollTo: (left: number, top: number) => {},
-      scrollToItem: (key: Key, alignment: 'auto' | 'start' | 'center' | 'end') => {}, // accessibility tab/arrow key navigation uses this + focus
-      getCanvasSize: () => ({ width, height }),
-      getRenderedItems: () => {},
-      getVisibleItems: () => {},
-      getBuckets: () => buckets,
-      getInnerRef: () => domRef,
-      recompute: () => {}, // forcibly recompute size + buckets + visible keys (should be unnecessary in most cases, but useful for debugging and testing)
-      recomputeItem: () => {}, */ // forcibly recompute size + bucket + visible key for a specific item (more efficient than recompute)
+      scrollTo,
+      scrollToItem,
+      recompute,
     }),
-    []
+    [domRef, recompute, scrollTo, scrollToItem]
   )
 
   // TODO: remove and place in debug/perf utils
   /* console.log(
     '# Visible Items:',
-    visibleKeys.length,
+    renderedKeys.length,
     '| Item IDs:',
-    visibleKeys.map((key) => utils.getItem(items, key))
+    renderedKeys.map((key) => utils.getItem(items, key))
   ) */
 
   return (
