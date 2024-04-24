@@ -7,13 +7,10 @@ export type { Alignment, ScrollToItemOptions, RenderItem } from './types'
 
 // TODO:
 // -- MVP --
-//   - Improve Hook API / core util to not assume DOM elements
-//   - Code Cleanup
 //   - Code Comments
 //   - Test Suites
 //   - Performance Benchmarks
 //   - Documentation
-//   - Code Comments
 //   - Tree-shaking Support
 //   - Accessibility: Support keyboard navigation
 //   - Accessibility: aria-labels (grid?)

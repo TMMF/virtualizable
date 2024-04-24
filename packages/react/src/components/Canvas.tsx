@@ -5,6 +5,7 @@ import CanvasItemProvider from './CanvasItemProvider'
 
 export type CanvasProps<Key extends types.KeyBase = types.KeyBase, Item extends types.ItemBase = types.ItemBase> = {
   renderItem: types.RenderItem<Key, Item>
+  onSizeChange?: (size: types.Size) => unknown
 }
 
 export type CanvasRef<
@@ -12,7 +13,7 @@ export type CanvasRef<
   Element extends types.SupportedElements[ElKey] = types.SupportedElements[ElKey]
 > = {
   getInnerRef: () => React.Ref<Element> | undefined
-  getCanvasSize: () => types.Size
+  getSize: () => types.Size
 }
 
 export const Canvas = <
@@ -24,7 +25,7 @@ export const Canvas = <
   props: types.AsProps<ElKey> & CanvasProps<Key, Item>,
   ref: React.Ref<CanvasRef<ElKey, Element>>
 ) => {
-  const { as: _as = 'div', renderItem, style, children, ...rest } = props
+  const { as: _as = 'div', renderItem, onSizeChange, style, children, ...rest } = props
   const Component = _as as unknown as React.ComponentType<types.InnerComponentProps<ElKey>>
 
   const { size, visibleEntries, getBoundingBox } = React.useContext(CanvasContext)
@@ -35,10 +36,16 @@ export const Canvas = <
     ref,
     (): CanvasRef<ElKey, Element> => ({
       getInnerRef: () => domRef,
-      getCanvasSize: () => size,
+      getSize: () => size,
     }),
     [size]
   )
+
+  React.useLayoutEffect(() => {
+    onSizeChange?.(size)
+    // Only run when size changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [size])
 
   return (
     <Component {...rest} ref={domRef} style={{ width, height, position: 'relative', ...style }}>

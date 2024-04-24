@@ -1,6 +1,5 @@
 import * as React from 'react'
 import * as types from '../types'
-import * as utils from '../utils'
 import Viewport, { ViewportProps, ViewportRef } from './Viewport'
 import Canvas, { CanvasProps, CanvasRef } from './Canvas'
 import Item from './Item'
@@ -8,10 +7,7 @@ import Item from './Item'
 export type VirtualizableProps<
   Key extends types.KeyBase = types.KeyBase,
   Item extends types.ItemBase = types.ItemBase
-> = ViewportProps<Key, Item> &
-  CanvasProps<Key, Item> & {
-    onVisible?: (keysVisible: Record<Key, boolean>) => void
-  }
+> = ViewportProps<Key, Item> & CanvasProps<Key, Item>
 
 export type VirtualizableRef<
   Key extends types.KeyBase = types.KeyBase,
@@ -29,35 +25,17 @@ export const Virtualizable = <Key extends types.KeyBase, Item extends types.Item
   props: VirtualizableProps<Key, Item> & { children?: React.ReactNode },
   ref: React.Ref<VirtualizableRef<Key, 'div', HTMLDivElement>>
 ) => {
-  const { renderItem, onVisible, children, ...viewportProps } = props
+  const { renderItem, onSizeChange, children, ...viewportProps } = props
 
-  const visibleItemsRef = React.useRef<Record<Key, boolean>>({} as Record<Key, boolean>)
   const viewportRef = React.useRef<ViewportRef<Key, 'div', HTMLDivElement>>(null)
   const canvasRef = React.useRef<CanvasRef<'div', HTMLDivElement>>(null)
-
-  // throttle onVisible by a little bit to allow for multiple items to be visible at once
-  // TODO: this is fundamentally broken, need to fix it
-  const _onVisible = React.useMemo(() => (onVisible ? utils.debounce(onVisible, 50) : undefined), [onVisible])
-  const onVisibleFactory = (key: Key) => {
-    if (!_onVisible) return undefined
-
-    return (visible: boolean) => {
-      if (visible) {
-        visibleItemsRef.current[key] = true
-      } else {
-        delete visibleItemsRef.current[key]
-      }
-
-      _onVisible(visibleItemsRef.current)
-    }
-  }
 
   React.useImperativeHandle(
     ref,
     (): VirtualizableRef<Key, 'div', HTMLDivElement> => ({
       getViewportRef: () => viewportRef.current?.getInnerRef(),
       getCanvasRef: () => canvasRef.current?.getInnerRef(),
-      getCanvasSize: () => canvasRef.current?.getCanvasSize() ?? DEFAULT_VIEWPORT_SIZE,
+      getSize: () => canvasRef.current?.getSize() ?? DEFAULT_VIEWPORT_SIZE,
       scrollTo: (...args) => viewportRef.current?.scrollTo(...args),
       scrollToItem: (...args) => viewportRef.current?.scrollToItem(...args),
       recompute: () => viewportRef.current?.recompute(),
@@ -71,7 +49,8 @@ export const Virtualizable = <Key extends types.KeyBase, Item extends types.Item
       <Canvas
         ref={canvasRef}
         // @ts-expect-error - Item != Item; gotta fix the types
-        renderItem={(item: Item, key: Key) => <Item onVisible={onVisibleFactory(key)}>{renderItem(item, key)}</Item>}
+        renderItem={(item: Item, key: Key) => <Item>{renderItem(item, key)}</Item>}
+        onSizeChange={onSizeChange}
       >
         {children}
       </Canvas>

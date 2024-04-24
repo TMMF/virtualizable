@@ -20,9 +20,6 @@
     "validate": "npm run lint && npm run test && npm run size",
     "clean": "rm -rf dist/"
   },
-  "peerDependencies": {
-    "react": ">=18"
-  },
   "name": "@virtualizable/core",
   "author": "Tiago Ferreira",
   "module": "./dist/index.mjs",
@@ -36,6 +33,7 @@
       "limit": "5 KB"
     }
   ],
+  "peerDependencies": {},
   "devDependencies": {},
   "dependencies": {}
 }

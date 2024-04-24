@@ -41,7 +41,7 @@ export type UseVirtualizableResult<
   ElKey extends types.SupportedElementKeys,
   Element extends types.SupportedElements[ElKey]
 > = {
-  domRef: React.RefObject<Element>
+  ref: React.RefObject<Element>
   size: types.Size
   renderedKeys: Key[]
   renderedItems: Item[]
@@ -254,7 +254,7 @@ export const useVirtualizable = <
     const renderedKeysArr = Array.from(renderedKeys)
 
     return {
-      domRef,
+      ref: domRef,
       size: canvasSize,
       renderedKeys: renderedKeysArr,
       renderedItems: renderedKeysArr.map((key) => getItem(items, key)),

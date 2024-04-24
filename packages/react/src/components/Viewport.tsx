@@ -11,11 +11,7 @@ export type ViewportProps<
   Key extends types.KeyBase = types.KeyBase,
   Item extends types.ItemBase = types.ItemBase
 > = utils.UseVirtualizableArgs<Key, Item> & {
-  //onCanvasSizeChange?: // size change
-  //onBucketsChange?: // buckets change
-  //onPreprocessed?: // Preprocessed data (when it finishes; indicative of when the component is ready to render)
-  //onItemsRendered?: (items: types.Collection<Key, Item>) => void // Rendered items (when it changes)
-  //onItemsVisible?: (items: types.Collection<Key, Item>) => void // Rendered + Visible items (when it changes)
+  onItemsRenderedChange?: (items: Record<Key, Item>) => unknown // Rendered items (when it changes)
 }
 
 export type ViewportRef<
@@ -51,17 +47,16 @@ const Viewport = <
     style: _style,
     children,
     onScroll: _onScroll,
+    onItemsRenderedChange,
     ...rest
   } = props
   const Component = _as as unknown as React.ComponentType<InnerComponentProps<ElKey>>
   const onScroll = _onScroll as React.UIEventHandler<Element>
 
   const {
-    domRef,
+    ref: domRef,
     size,
     renderedKeys,
-    /* renderedItems,
-    renderedEntries, */
     onScroll: throttledScroll,
     scrollTo,
     scrollToItem,
@@ -99,13 +94,16 @@ const Viewport = <
     [domRef, recompute, scrollTo, scrollToItem]
   )
 
-  // TODO: remove and place in debug/perf utils
-  /* console.log(
-    '# Visible Items:',
-    renderedKeys.length,
-    '| Item IDs:',
-    renderedKeys.map((key) => utils.getItem(items, key))
-  ) */
+  React.useLayoutEffect(() => {
+    const rendered = renderedKeys.reduce((acc, key) => {
+      acc[key] = utils.getItem(items, key)
+      return acc
+    }, {} as Record<Key, Item>)
+
+    onItemsRenderedChange?.(rendered)
+    // Only run when rendered keys have changed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renderedKeys])
 
   return (
     <Component {...rest} ref={domRef} onScroll={handleScroll} style={style}>
