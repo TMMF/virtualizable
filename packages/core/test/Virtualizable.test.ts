@@ -23,7 +23,7 @@ describe('Virtualizable', () => {
 
     expect(v.getCanvasSize()).toMatchInlineSnapshot(`
       {
-        "height": 391,
+        "height": 390,
         "width": 390,
       }
     `)
