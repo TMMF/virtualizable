@@ -13,8 +13,9 @@
   "scripts": {
     "start": "NODE_ENV='development' rollup --config --watch",
     "build": "NODE_ENV='production' rollup --config",
-    "test": "vitest **/*.test.ts",
-    "benchmark": "vitest bench **/*.benchmark.ts",
+    "test": "vitest run **/*.test.ts",
+    "test:watch": "vitest watch **/*.test.ts",
+    "benchmark": "vitest bench **/*.bench.ts",
     "lint": "eslint src/",
     "size": "size-limit",
     "analyze": "size-limit --why",
