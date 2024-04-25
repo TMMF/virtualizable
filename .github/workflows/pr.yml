@@ -45,5 +45,16 @@ jobs:
       - name: Test
         run: npm run coverage
 
-      - name: Vitest Coverage Report
+      - name: 'Core Package Coverage Report'
         uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: 'Core Package'
+          json-summary-path: './packages/core/coverage/coverage-summary.json'
+          json-final-path: './packages/core/coverage/coverage-final.json'
+
+      - name: 'React Package Coverage Report'
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: 'React Package'
+          json-summary-path: './packages/react/coverage/coverage-summary.json'
+          json-final-path: './packages/react/coverage/coverage-final.json'
