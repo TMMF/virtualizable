@@ -66,6 +66,7 @@ jobs:
           path: coverage
 
   report-coverage:
+    needs: coverage
     name: Coverage Report
     runs-on: ubuntu-latest
     permissions:
