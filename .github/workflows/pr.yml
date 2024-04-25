@@ -31,14 +31,20 @@ jobs:
   coverage:
     name: Coverage Check
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch:
+          - ${{ github.head_ref }}
+          - 'main'
 
     permissions:
       contents: read
-      pull-requests: write
 
     steps:
-      - name: Checkout repo
+      - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
 
       - name: Use Node 21.x
         uses: actions/setup-node@v4
@@ -53,16 +59,32 @@ jobs:
       - name: Test
         run: npm run coverage
 
-      - name: 'Core Package Coverage Report'
-        uses: davelosert/vitest-coverage-report-action@v2
+      - name: 'Upload Coverage'
+        uses: actions/upload-artifact@v4
         with:
-          name: 'Core Package'
-          json-summary-path: './packages/core/coverage/coverage-summary.json'
-          json-final-path: './packages/core/coverage/coverage-final.json'
+          name: coverage-${{ matrix.branch }}
+          path: coverage
 
-      - name: 'React Package Coverage Report'
+  report-coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: 'Download Coverage Artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-${{ github.head_ref }}
+          path: coverage
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-main
+          path: coverage-main
+
+      - name: 'Report Coverage'
         uses: davelosert/vitest-coverage-report-action@v2
         with:
-          name: 'React Package'
-          json-summary-path: './packages/react/coverage/coverage-summary.json'
-          json-final-path: './packages/react/coverage/coverage-final.json'
+          json-summary-compare-path: coverage-main/coverage-summary.json
