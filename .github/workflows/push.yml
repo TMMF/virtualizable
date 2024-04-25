@@ -2,7 +2,7 @@ name: Push
 on: [push]
 jobs:
   build:
-    name: Lint + Test + Build
+    name: Build
     runs-on: ubuntu-latest
 
     permissions:
@@ -21,12 +21,6 @@ jobs:
         uses: bahmutov/npm-install@v1
         with:
           install-command: npm ci --include=optional
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Test
-        run: npm run test
 
       - name: Build
         run: npm run build

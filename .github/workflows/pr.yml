@@ -28,8 +28,8 @@ jobs:
           skip_step: install
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-  coverage:
-    name: Coverage Check
+  test:
+    name: Lint + Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -56,8 +56,11 @@ jobs:
         with:
           install-command: npm ci --include=optional
 
+      - name: Lint
+        run: npm run lint
+
       - name: Test
-        run: npm run coverage
+        run: npm run test -- --coverage
 
       - name: 'Upload Coverage'
         uses: actions/upload-artifact@v4
@@ -65,8 +68,8 @@ jobs:
           name: coverage-${{ matrix.branch }}
           path: coverage
 
-  report-coverage:
-    needs: coverage
+  coverage:
+    needs: test
     name: Coverage Report
     runs-on: ubuntu-latest
     permissions:

@@ -13,7 +13,6 @@
     "lint": "nx run-many --target=lint --all",
     "test": "vitest",
     "benchmark": "vitest bench",
-    "coverage": "npm run test -- --coverage",
     "size": "size-limit",
     "analyze": "size-limit --why",
     "version": "lerna version --no-private",
