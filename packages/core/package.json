@@ -19,7 +19,7 @@
     "lint": "eslint src/",
     "size": "size-limit",
     "analyze": "size-limit --why",
-    "coverage": "npm run test -- --coverage",
+    "coverage": "COVERAGE=true npm run test -- --coverage",
     "validate": "npm run lint && npm run test && npm run size",
     "clean": "rm -rf dist/"
   },
