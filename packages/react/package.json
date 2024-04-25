@@ -20,6 +20,7 @@
     "analyze": "size-limit --why",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
+    "coverage": "npm run test -- --coverage",
     "validate": "npm run lint && npm run test && npm run size",
     "clean": "rm -rf dist/"
   },

@@ -1,0 +1,65 @@
+name: Push
+on: [push]
+jobs:
+  build:
+    name: Build
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use Node 21.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21.x'
+
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+        with:
+          install-command: npm ci --include=optional
+
+      - name: Build
+        run: npm run build
+
+  lint:
+    name: Lint
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use Node 21.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21.x'
+
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+        with:
+          install-command: npm ci --include=optional
+
+      - name: Lint
+        run: npm run lint
+
+  test:
+    name: Test
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use Node 21.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '21.x'
+
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+        with:
+          install-command: npm ci --include=optional
+
+      - name: Test
+        run: npm run test

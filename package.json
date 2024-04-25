@@ -13,13 +13,13 @@
     "test": "nx run-many --target=test --all",
     "lint": "nx run-many --target=lint --all",
     "size": "size-limit",
+    "coverage": "nx run-many --target=coverage --all",
     "version": "lerna version --no-private",
     "publish": "lerna publish --no-private",
     "docs:start": "",
     "docs:build": ""
   },
   "devDependencies": {
-    "lerna": "8.1.2",
     "@babel/core": "7.24.3",
     "@babel/preset-env": "7.24.3",
     "@babel/preset-react": "7.24.1",
@@ -32,11 +32,13 @@
     "@size-limit/preset-small-lib": "11.0.3",
     "@types/react": "18.2.65",
     "@types/react-dom": "18.2.21",
+    "@vitest/coverage-v8": "1.5.1",
     "babel-plugin-annotate-pure-calls": "0.4.0",
     "eslint": "8.57.0",
     "eslint-plugin-react": "7.34.0",
     "eslint-plugin-react-hooks": "4.6.0",
     "fs-extra": "11.2.0",
+    "lerna": "8.1.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "rollup": "4.13.0",
@@ -46,7 +48,7 @@
     "tslib": "2.6.2",
     "typescript": "5.4.2",
     "typescript-eslint": "7.2.0",
-    "vitest": "1.4.0"
+    "vitest": "1.5.1"
   },
   "optionalDependencies": {
     "@nx/nx-linux-x64-gnu": "18.2.2"
