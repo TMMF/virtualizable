@@ -12,6 +12,7 @@
     "start": "nx run-many --target=start --all",
     "test": "nx run-many --target=test --all",
     "lint": "nx run-many --target=lint --all",
+    "size": "size-limit",
     "version": "lerna version --no-private",
     "publish": "lerna publish --no-private",
     "docs:start": "",
@@ -49,5 +50,23 @@
   },
   "optionalDependencies": {
     "@nx/nx-linux-x64-gnu": "18.2.2"
-  }
+  },
+  "size-limit": [
+    {
+      "path": "./packages/core/dist/index.cjs",
+      "limit": "5 KB"
+    },
+    {
+      "path": "./packages/core/dist/index.mjs",
+      "limit": "5 KB"
+    },
+    {
+      "path": "./packages/react/dist/index.cjs",
+      "limit": "10 KB"
+    },
+    {
+      "path": "./packages/react/dist/index.mjs",
+      "limit": "10 KB"
+    }
+  ]
 }
