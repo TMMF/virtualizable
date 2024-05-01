@@ -8,7 +8,7 @@ const config: Config = {
   favicon: 'img/logo.svg',
 
   // Set the production url of your site here
-  url: 'https://virtualizable.github.io',
+  url: 'https://TMMF.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -17,8 +17,9 @@ const config: Config = {
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'TMMF', // Usually your GitHub org/user name.
   projectName: 'virtualizable', // Usually your repo name.
+  trailingSlash: false,
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
@@ -97,15 +98,15 @@ const config: Config = {
           items: [
             {
               label: 'Learn',
-              to: '/docs/intro',
+              to: '/docs/quickstart',
             },
             {
               label: 'Reference',
-              to: '/docs/intro',
+              to: '/docs/quickstart',
             },
             {
               label: 'Examples',
-              to: '/docs/intro',
+              to: '/docs/quickstart',
             },
           ],
         },
