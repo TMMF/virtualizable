@@ -86,9 +86,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: coverage-main
-          path: coverage-main
+          path: coverage
 
       - name: 'Report Coverage'
         uses: davelosert/vitest-coverage-report-action@v2
         with:
-          json-summary-compare-path: coverage-main/coverage-summary.json
+          json-summary-compare-path: coverage/coverage-summary.json

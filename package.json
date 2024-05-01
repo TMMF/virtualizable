@@ -3,6 +3,7 @@
   "author": "Tiago Ferreira",
   "license": "MIT",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
@@ -24,6 +25,7 @@
     "@babel/core": "7.24.3",
     "@babel/preset-env": "7.24.3",
     "@babel/preset-react": "7.24.1",
+    "@codspeed/vitest-plugin": "3.1.0",
     "@rollup/plugin-babel": "6.0.4",
     "@rollup/plugin-commonjs": "25.0.7",
     "@rollup/plugin-json": "6.1.0",
