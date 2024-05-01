@@ -9,7 +9,6 @@ export type { Alignment, ScrollToItemOptions, RenderItem } from './types'
 // -- MVP --
 //   - Code Comments
 //   - Test Suites
-//   - Performance Benchmarks
 //   - Documentation
 //   - Tree-shaking Support
 //   - Accessibility: Support keyboard navigation
