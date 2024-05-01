@@ -3,6 +3,7 @@
   "author": "Tiago Ferreira",
   "license": "MIT",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
@@ -10,18 +11,21 @@
     "clean": "nx run-many --target=clean --all",
     "build": "nx run-many --target=build --all",
     "start": "nx run-many --target=start --all",
-    "test": "nx run-many --target=test --all",
     "lint": "nx run-many --target=lint --all",
+    "test": "vitest",
+    "benchmark": "vitest bench",
+    "size": "size-limit",
+    "analyze": "size-limit --why",
     "version": "lerna version --no-private",
     "publish": "lerna publish --no-private",
     "docs:start": "",
     "docs:build": ""
   },
   "devDependencies": {
-    "lerna": "8.1.2",
     "@babel/core": "7.24.3",
     "@babel/preset-env": "7.24.3",
     "@babel/preset-react": "7.24.1",
+    "@codspeed/vitest-plugin": "3.1.0",
     "@rollup/plugin-babel": "6.0.4",
     "@rollup/plugin-commonjs": "25.0.7",
     "@rollup/plugin-json": "6.1.0",
@@ -31,11 +35,13 @@
     "@size-limit/preset-small-lib": "11.0.3",
     "@types/react": "18.2.65",
     "@types/react-dom": "18.2.21",
+    "@vitest/coverage-v8": "1.5.1",
     "babel-plugin-annotate-pure-calls": "0.4.0",
     "eslint": "8.57.0",
     "eslint-plugin-react": "7.34.0",
     "eslint-plugin-react-hooks": "4.6.0",
     "fs-extra": "11.2.0",
+    "lerna": "8.1.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "rollup": "4.13.0",
@@ -45,6 +51,27 @@
     "tslib": "2.6.2",
     "typescript": "5.4.2",
     "typescript-eslint": "7.2.0",
-    "vitest": "1.4.0"
-  }
+    "vitest": "1.5.1"
+  },
+  "optionalDependencies": {
+    "@nx/nx-linux-x64-gnu": "18.2.2"
+  },
+  "size-limit": [
+    {
+      "path": "./packages/core/dist/index.cjs",
+      "limit": "5 KB"
+    },
+    {
+      "path": "./packages/core/dist/index.mjs",
+      "limit": "5 KB"
+    },
+    {
+      "path": "./packages/react/dist/index.cjs",
+      "limit": "10 KB"
+    },
+    {
+      "path": "./packages/react/dist/index.mjs",
+      "limit": "10 KB"
+    }
+  ]
 }

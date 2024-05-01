@@ -13,27 +13,13 @@
   "scripts": {
     "start": "NODE_ENV='development' rollup --config --watch",
     "build": "NODE_ENV='production' rollup --config",
-    "test": "vitest **/*.test.tsx",
     "lint": "eslint src/",
-    "size": "size-limit",
-    "analyze": "size-limit --why",
-    "validate": "npm run lint && npm run test && npm run size",
     "clean": "rm -rf dist/"
   },
   "name": "@virtualizable/core",
   "author": "Tiago Ferreira",
   "module": "./dist/index.mjs",
-  "size-limit": [
-    {
-      "path": "./dist/index.cjs",
-      "limit": "5 KB"
-    },
-    {
-      "path": "./dist/index.mjs",
-      "limit": "5 KB"
-    }
-  ],
-  "peerDependencies": {},
   "devDependencies": {},
+  "peerDependencies": {},
   "dependencies": {}
 }

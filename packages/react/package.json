@@ -13,37 +13,23 @@
   "scripts": {
     "start": "NODE_ENV='development' rollup --config --watch",
     "build": "NODE_ENV='production' rollup --config",
-    "test": "vitest **/*.test.tsx",
     "lint": "eslint src/",
-    "size": "size-limit",
-    "analyze": "size-limit --why",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
-    "validate": "npm run lint && npm run test && npm run size",
     "clean": "rm -rf dist/"
-  },
-  "peerDependencies": {
-    "react": ">=18"
   },
   "name": "@virtualizable/react",
   "author": "Tiago Ferreira",
   "module": "./dist/index.mjs",
-  "size-limit": [
-    {
-      "path": "./dist/index.cjs",
-      "limit": "10 KB"
-    },
-    {
-      "path": "./dist/index.mjs",
-      "limit": "10 KB"
-    }
-  ],
   "devDependencies": {
     "@storybook/addon-essentials": "7.6.17",
     "@storybook/addon-info": "5.3.21",
     "@storybook/addon-links": "7.6.17",
     "@storybook/addons": "7.6.17",
     "@storybook/react": "7.6.17"
+  },
+  "peerDependencies": {
+    "react": ">=18"
   },
   "dependencies": {
     "@virtualizable/core": "^0.0.0"
