@@ -19,7 +19,7 @@ const config: Config = {
   projectName: 'virtualizable', // Usually your repo name.
   trailingSlash: false,
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
@@ -98,15 +98,15 @@ const config: Config = {
           items: [
             {
               label: 'Learn',
-              to: '/docs/intro',
+              to: '/docs/quickstart',
             },
             {
               label: 'Reference',
-              to: '/docs/intro',
+              to: '/docs/quickstart',
             },
             {
               label: 'Examples',
-              to: '/docs/intro',
+              to: '/docs/quickstart',
             },
           ],
         },

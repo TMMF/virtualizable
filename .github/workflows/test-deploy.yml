@@ -3,13 +3,13 @@ on:
   pull_request:
     branches:
       - main
-defaults:
-  run:
-    working-directory: ./website
 jobs:
   test-deploy:
     name: Test deployment
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./website
     steps:
       - uses: actions/checkout@v4
         with:
